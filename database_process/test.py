@@ -62,3 +62,7 @@ print(a, b)
 a, b = (1,1) if False else (2,1)
 
 print(a, b)
+
+a = set
+a.add(1)
+print(a)

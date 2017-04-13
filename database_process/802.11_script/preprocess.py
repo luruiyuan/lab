@@ -133,6 +133,44 @@ def copy_column_in_same_table(*, from_columns, to_columns, conn, database, table
     sqls.extend([sql, "set SQL_SAFE_UPDATES = 1;"]) # reset to safe-update mode
     db.excute_update_sqls(conn, *sqls)
 
+def split_by_spiter(*, conn, database, table, columns, spliter):
+    """
+    返回一个2d数组
+    每一位度是一列
+    """
+
+    if columns is not None and not isinstance(columns, list):
+        columns = [columns]
+    
+    res = []
+
+    for col in columns:
+        sql = "select distinct %s from %s;" % (__check_space_in_column_name__(col), __check_db_is_set__(database, table))
+        cursor = db.excute_has_resultset_sqls(conn, sql)
+        rows = cursor.fetchall()
+        
+        value = []
+        for row in rows:
+            ven = row[col].split(spliter)[0]
+            value.append(ven)
+        res.append(list(set(value)))
+    return res
+
+def set_column_by_prefix(*, conn, database, table, from_column, to_column, prefix):
+    """
+    通过前缀给列设置值
+    如 tp-link:30:5d:4a 传入目标列 label_vendor, 检查列 Source address: tp-link:30:5d:4a, 前缀为 tp-link
+    则会将在 Source address 中前缀为 tp-link 的行中添加列： label_vendor 并设置其值为 tp-link
+    """
+    if not isinstance(prefix, list):
+        prefix = [prefix]
+    for pre in prefix:
+        sql = "update %s set %s = '%s' where %s like '%s%%';" % (__check_db_is_set__(database, table), \
+                __check_space_in_column_name__(to_column), pre, \
+                __check_space_in_column_name__(to_column), pre)
+        
+        db.excute_update_sqls(conn, sql)
+
 def main():
     
     conn = db.create_connection()
@@ -146,10 +184,26 @@ def main():
     add_columns_by_name(conn=conn, databse="alu", table="data", columns=["label1"], data_types=["varchar(45)"])
 
     # copy_column_in_same_table(from_columns=["Protocol", "Type/Subtype"], to_columns=["Source address","Destination"], conn=conn, database="alu", table="data")
-    copy_column_in_same_table(from_columns=["Source address"], to_columns=["label1"], conn=conn, database="alu", table="data")
+    # copy_column_in_same_table(from_columns=["Source address"], to_columns=["label1"], conn=conn, database="alu", table="data")
 
     db.close_connection()
 
+def tmp_modify():
+    conn = db.create_connection()
+
+    database = "alu"
+    table = "data"
+    spliter = "_"
+
+    # add_columns_by_name(conn=conn, databse="alu", table="data", columns=["label1"], data_types=["varchar(45)"])
+    # copy_column_in_same_table(from_columns=["Source address"], to_columns=["label_vendor"], conn=conn, database="alu", table="data")
+
+    # drop_columns_by_name(conn=conn, databse="alu", table="data", columns="label1")
+    vendors = split_by_spiter(conn=conn, database=database, table=table, columns="label_vendor", spliter=spliter)[0]
+    set_column_by_prefix(conn=conn, database=database, table=table, from_column="Source address", to_column="label_vendor", prefix=vendors)
+    
+    db.close_connection()    
 
 if __name__ == "__main__":
-    main()
+    # main()
+    tmp_modify()
