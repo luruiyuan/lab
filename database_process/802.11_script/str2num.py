@@ -1,10 +1,11 @@
 # coding:utf-8
 
-def str2vector(string, str_dict):
-    if string in str_dict:
-        return str_dict[string]
-    id = len(str_dict)
-    str_dict[string] = id
+
+def str2int(s, dictionary):
+    if s in dictionary:
+        return dictionary[s]
+    id = len(dictionary)
+    dictionary[s] = id
     return id
 
 def str2num_char(string):

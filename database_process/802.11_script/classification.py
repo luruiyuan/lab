@@ -4,11 +4,12 @@ sys.path.append('/home/luruiyuan/python/Codes/machine learning/database_process/
 import db_process as db
 
 from db_process import __check_db_is_set__ as checkdb, __check_space_in_column_name__ as checksp, __check_space_in_multi_column_names__ as checkmulsps
-from str2num import str2num_char as str2num
+from str2num import str2int as str2num
 
 import numpy as np
 import matplotlib.pyplot as plt
 
+dicts = None
 
 def get_all_column_names_by_table(*, conn, database="alu", table="data"):
     """
@@ -169,6 +170,9 @@ def convert2num(tensors, *, trans_func=str2num):
 
     res = tensors[:]
 
+    global dicts
+    dicts = [dict() for _ in res[0]] # dict for each column
+
     print("spliting data set...")
     for n in res:
         for i, value in enumerate(n):
@@ -176,7 +180,7 @@ def convert2num(tensors, *, trans_func=str2num):
                 if value.isdigit():
                     n[i] = float(value)
                 else:
-                    n[i] = trans_func(value)
+                    n[i] = trans_func(value, dicts[i])
     print("spliting finished!")
     return res # return a 2-d tensor
 
@@ -261,7 +265,7 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
         # train
         print(c_name,"training...")        
         print( clf.fit(train_x, train_y) )
-        print(c_name, "predicting finished!")        
+        print(c_name, "predicting finished!")
         print("training finished!")
         
         # validate
@@ -287,7 +291,9 @@ def get_max_min(x, *, min_func=None, max_func=None, value2num_func=str2num):
 
     data = np.transpose(x) # 矩阵转置
     for attrs in data:
-        values = list(map(value2num_func, attrs))
+        # values = list(map(value2num_func, attrs)) # 直接哈希时使用
+
+        values = attrs # map 计数时使用
         min_attr, max_attr = min(values), max(values)
 
         max_list.append(max_attr)
@@ -307,10 +313,10 @@ def max_min_normalization(data, value2num_func):
     min_attrs, max_attrs = get_max_min(data)
     data_tran = np.transpose(data)
 
-    for max_num, min_num, col in zip(min_attrs, max_attrs, data_tran):
+    for diction, max_num, min_num, col in zip(dicts, min_attrs, max_attrs, data_tran):
         rg = max_num - min_num
         for i, d in enumerate(col):
-            col[i] = 1.0 if rg == 0 else float(value2num_func(d) - min_num) / rg
+            col[i] = 1.0 if rg == 0 else float(value2num_func(d, diction) - min_num) / rg
     
     return np.transpose(data_tran)
 
@@ -320,38 +326,77 @@ def normalization(data, normalize_method="max_min", value2num_func=str2num):
     print("normalization finished!")
     return res
 
-def main():
-    from sklearn import svm
-    
-    svc_default = svm.SVC()
+
+def init_classifiers():
+    """
+    Return classifiers names and classifiers
+    """
+    print("import pakgs...")
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.datasets import make_moons, make_circles, make_classification
+    from sklearn.neural_network import MLPClassifier
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.svm import SVC, LinearSVC
+    from sklearn.gaussian_process import GaussianProcessClassifier
+    from sklearn.gaussian_process.kernels import RBF
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+    from sklearn.naive_bayes import GaussianNB
+    from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+    print("import done!")
+
+    print("init classifers...")
+    svc_default = SVC()
     C = 1.0  # SVM regularization parameter
-    svc = svm.SVC(kernel='linear', C=C)
-    rbf_svc = svm.SVC(kernel='rbf', gamma=0.7, C=C)
-    poly_svc = svm.SVC(kernel='poly', degree=3, C=C)
-    lin_svc = svm.LinearSVC(C=C)
+    svc = SVC(kernel='linear', C=C)
+    rbf_svc = SVC(kernel='rbf', gamma=0.7, C=C)
+    poly_svc = SVC(kernel='poly', degree=3, C=C)
+    lin_svc = LinearSVC(C=C)
 
     # title for the plots
-    titles = ['SVC with default settings',
-            'SVC with linear kernel',
-            'LinearSVC (linear kernel)',
-            'SVC with RBF kernel',
-            'SVC with polynomial (degree 3) kernel']
+
+    names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
+         "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
+         "Naive Bayes", "QDA"]
+
+    titles = ['my_SVC with default settings',
+            'my_SVC with linear kernel',
+            'my_LinearSVC (linear kernel)',
+            'my_SVC with RBF kernel',
+            'my_SVC with polynomial (degree 3) kernel']
+    
+    names.extend(titles)
 
     # add classifiers to list
-    classifiers  = []
+    classifiers = [
+    KNeighborsClassifier(3),
+    SVC(kernel="linear", C=0.025),
+    SVC(gamma=2, C=1),
+    GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
+    DecisionTreeClassifier(max_depth=5),
+    RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+    MLPClassifier(alpha=1),
+    AdaBoostClassifier(),
+    GaussianNB(),
+    QuadraticDiscriminantAnalysis()]
+
     classifiers.append(svc_default)
     classifiers.append(svc)
     classifiers.append(rbf_svc)
     classifiers.append(poly_svc)
     classifiers.append(lin_svc)
+    print("init classifers done!")
 
-    attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, \
-        validate_y, evaluate_res = train_validate(train_fraction=0.8, classifier=classifiers, \
-                clf_names=titles, exclude_attr_columns=["Time", "Source address", "TSF Timestamp"])
-    
+    return names, classifiers
 
-    for c_name, res in zip(titles, evaluate_res):
+def print_res(classifier_names, evaluate_results):
+    for c_name, res in zip(classifier_names, evaluate_results):
         print(c_name, res)
+
 
 def test():
     x = [[1, 2, 3, "abc"], ["ack", "heheda","megmegd"], [4,5,6,"def"]]
@@ -363,6 +408,16 @@ def test():
     # print(np.shape(max_min_normalization(x)))
     # print(np.shape(normalization(x)))
 
+def main():
+    # initialize
+    names, classifiers = init_classifiers()
+
+    # train and validate
+    attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, \
+        validate_y, evaluate_res = train_validate(train_fraction=0.8, classifier=classifiers, \
+                clf_names=names, exclude_attr_columns=["Time", "Source address", "TSF Timestamp"])
+    
+    print_res(names, evaluate_res)
 
 if __name__ == '__main__':
     main()
