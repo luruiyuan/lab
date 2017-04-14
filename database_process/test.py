@@ -77,8 +77,9 @@ print("%r" %s)
 print(os.path.abspath("./database_process"))
 s = os.path.dirname(p=__file__)+'/data_preprocess/'
 print(os.path.abspath(s))
+print(". path:", os.path.abspath("."))
 print("s:",s)
-print("__file__:", __file__)
+print("__file__:", __file__) # __file__ 在不同系统上是不同的
 sys.path.append(s)
 import db_process
 print("ok")
