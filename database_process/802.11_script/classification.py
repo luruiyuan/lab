@@ -8,8 +8,8 @@ import os
 print(os.path.dirname(p=__file__))
 # __file__ is different. In Ubuntu, __file__ is the whole path
 # in CentOS, only contains the source file name
-sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package for my computer
-# sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for server
+# sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package for my computer
+sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for server
 
 import db_process as db
 
