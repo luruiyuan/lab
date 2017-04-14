@@ -6,8 +6,10 @@
 import sys
 import os
 print(os.path.dirname(p=__file__))
-# sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package to system path temperarily
-sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for server
+# __file__ is different. In Ubuntu, __file__ is the whole path
+# in CentOS, only contains the source file name
+sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package for my computer
+# sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for server
 
 import db_process as db
 
@@ -15,7 +17,7 @@ from db_process import __check_db_is_set__ as checkdb, __check_space_in_column_n
 from str2num import str2int as str2num
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 dicts = None
 
