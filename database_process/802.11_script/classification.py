@@ -6,7 +6,9 @@
 import sys
 import os
 print(os.path.dirname(p=__file__))
-sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package to system path temperarily
+# sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package to system path temperarily
+sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for server
+
 import db_process as db
 
 from db_process import __check_db_is_set__ as checkdb, __check_space_in_column_name__ as checksp, __check_space_in_multi_column_names__ as checkmulsps
