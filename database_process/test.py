@@ -70,7 +70,7 @@ import sys
 print(os.getcwd())
 print(os.path.abspath("."))
 print(__file__)
-
+print("os.path.dirname(p=__file__)", os.path.dirname(p=__file__))
 s = __file__
 print("%r" %s)
 
