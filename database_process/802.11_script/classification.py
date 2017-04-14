@@ -5,6 +5,7 @@
 # and we can use relative path to import our own python file
 import sys
 import os
+print(os.path.dirname(p=__file__))
 sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package to system path temperarily
 import db_process as db
 
