@@ -5,11 +5,10 @@
 # and we can use relative path to import our own python file
 import sys
 import os
-print(os.path.dirname(p=__file__))
 # __file__ is different. In Ubuntu, __file__ is the whole path
 # in CentOS, only contains the source file name
-# sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package for my computer
-sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for server
+# sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package for my Ubuntu
+sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for centOS server
 
 import db_process as db
 
@@ -257,6 +256,10 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
                                                     table=table, cluster_columns=cluster_column_names,
                                                     attr_exculde_columns=exclude_attr_columns,
                                                     label_exclude_columns=exclude_attr_columns)
+    # close connection
+    if in_flag:
+        db.close_connection()
+
     # split data set for training and validating
     trains, validates = split_fraction_for_train_validate(train_fraction, cluster_values, data_rows, cluster_values)
     
@@ -289,8 +292,6 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
         evaluate_results.append(evaluate_res)
         print(c_name,"evaluating finished!")
 
-    if in_flag:
-        db.close_connection()
     return attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, validate_y, evaluate_results
 
 def get_max_min(x, *, min_func=None, max_func=None, value2num_func=str2num):
