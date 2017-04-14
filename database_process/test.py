@@ -64,5 +64,16 @@ a, b = (1,1) if False else (2,1)
 print(a, b)
 
 a = set
-a.add(1)
-print(a)
+
+import os
+import sys
+print(os.getcwd())
+print(os.path.abspath("."))
+print(__file__)
+
+s = __file__
+print("%r" %s)
+
+print(os.path.abspath("./database_process"))
+s = os.path.dirname(p=__file__)
+print("s:",s)

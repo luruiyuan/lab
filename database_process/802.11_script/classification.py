@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+
+# os.path.dirname returns the path of the directory.
+# eg: /home/luruiyuan/python/Codes/machine learning/database_process/802.11_script
+# and we can use relative path to import our own python file
 import sys
-sys.path.append('/home/luruiyuan/python/Codes/machine learning/database_process/data_preprocess') # add package to system path temperarily
+import os
+sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package to system path temperarily
 import db_process as db
 
 from db_process import __check_db_is_set__ as checkdb, __check_space_in_column_name__ as checksp, __check_space_in_multi_column_names__ as checkmulsps
