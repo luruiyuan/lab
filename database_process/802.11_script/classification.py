@@ -126,13 +126,14 @@ def get_attr_value_label_value_by_table(*, conn, database="alu", table="data",
     
     return data_rows, labels_values, cluster_values
 
-def split_fraction_for_train_validate(train_fraction, clusters, data_rows, labels):
+def split_fraction_for_train_validate(train_fraction, clusters, data_rows, labels, index):
     """
     @Params:
         train_fraction: 0~1, represents the fraction of training set
         clusters: cluster indeies
         data_rows: datas in the shape of 2-d list
         labels: a list contains all the values of each label
+        index: the index used to cluster data
     
     Return:
         @param train: The training set (2-d list)
@@ -153,7 +154,7 @@ def split_fraction_for_train_validate(train_fraction, clusters, data_rows, label
     from collections import OrderedDict
     split_dict = OrderedDict()
     for clu, row, label in zip(clusters, data_rows, labels):
-        cl = clu[0] # list to str
+        cl = clu[index] # list to str
         if cl in split_dict:
             split_dict[cl].append([row, label])
         else:
@@ -275,7 +276,7 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
     data_rows = type_transform(data_rows)
 
     # split data set for training and validating
-    trains, validates = split_fraction_for_train_validate(train_fraction, cluster_values, data_rows, cluster_values)
+    trains, validates = split_fraction_for_train_validate(train_fraction, cluster_values, data_rows, cluster_values, 1)
     
     # split feature labels and category labels
     # x is the list of feature labels, and y is the list of category labels
@@ -284,14 +285,6 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
     
     # normalize trainning set and validate set 归一化训练集和验证集
     train_x, validate_x = normalization(train_x, validate_x)
-
-    # test
-    # num = 1000;
-    # train_x = train_x[:num]
-    # train_y = train_y[:num]
-
-    # validate_x = validate_x[:num]
-    # validate_y = validate_y[:num]
 
     evaluate_results = []
     if not isinstance(classifier, list):

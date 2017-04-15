@@ -125,7 +125,7 @@ def excute_has_resultset_sqls(conn, *sqls, batch_size=16):
     #     print(sqls[i])
     # excute_has_resultset_sqls(create_connection(host="localhost",port=3306, user="root", passwd="root"), *sqls)
     """
-    print("excuting select sqls ...")
+    print("excuting sqls ...")
     cursor = conn.cursor()
     if isinstance(sqls, str):
         cursor.execute(sql)
