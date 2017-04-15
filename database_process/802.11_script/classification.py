@@ -5,8 +5,8 @@
 # and we can use relative path to import our own python file
 import sys
 import os
-# __file__ is different. In Ubuntu, __file__ is the whole path
-# in CentOS, only contains the source file name
+# __file__ is different. In Vscode, __file__ is the whole path
+# in CentOS or Ubuntu, only contains the source file name
 # sys.path.append(os.path.dirname(p=__file__)+'/../data_preprocess/') # add package for my Ubuntu
 sys.path.append(os.path.abspath(".")+'/../data_preprocess/') # add package for centOS server
 
@@ -17,8 +17,6 @@ from str2num import str2int as str2num
 
 import numpy as np
 # import matplotlib.pyplot as plt
-
-dicts = None
 
 def get_all_column_names_by_table(*, conn, database="alu", table="data"):
     """
@@ -81,7 +79,7 @@ def get_attr_names_label_names_by_table(*, conn, database="alu", table="data", a
     return attr_names, label_names
 
 def get_attr_value_label_value_by_table(*, conn, database="alu", table="data",
-        cluster_columns = ["Source address"], \
+        cluster_columns = None, \
         attr_exculde_columns=None, label_exclude_columns=None):
     """
     Put all the data into 2d tensors.
@@ -117,6 +115,8 @@ def get_attr_value_label_value_by_table(*, conn, database="alu", table="data",
                                     database=database, table=table,
                                     attr_exculde_columns=attr_exculde_columns,
                                     label_exclude_columns=label_exclude_columns)
+    if cluster_columns is None:
+        cluster_columns = label_names
     sql = "select * from %s;" % checkdb(database, table)
     cursor = db.excute_has_resultset_sqls(conn, sql)
     for m in cursor.fetchall():
@@ -172,27 +172,6 @@ def split_fraction_for_train_validate(train_fraction, clusters, data_rows, label
 
     return train, validate
 
-def convert2num(tensors, *, trans_func=str2num):
-    """
-    transform object to num. Users must specify how to transform.
-    """
-
-    res = tensors[:]
-
-    global dicts
-    dicts = [dict() for _ in res[0]] # dict for each column
-
-    print("spliting data set...")
-    for n in res:
-        for i, value in enumerate(n):
-            if isinstance(value, str):
-                if value.isdigit():
-                    n[i] = float(value)
-                else:
-                    n[i] = trans_func(value, dicts[i])
-    print("spliting finished!")
-    return res # return a 2-d tensor
-
 def get_classification_accuracy(*, predict_labels, correct_labels):
     print("start accuracy calculation...")
     accuracy = .0
@@ -202,8 +181,39 @@ def get_classification_accuracy(*, predict_labels, correct_labels):
     print("accuracy calculation finished!\n  accuracy:", accuracy)
     return accuracy
 
+def transpose(dataset):
+    # np.transpose will convert number to str
+    print("data is being transposed...")
+    data = [[] for i in range(len(dataset[0]))]
+    for row in dataset:
+        for j, value in enumerate(row):
+            data[j].append(value)
+    print("data transposed succeeded!")        
+    return data
+
+def type_transform(dataset):
+    """
+    transform data from str to number
+    """
+    print("data type is being transformed!")
+    numbers = set([1,2,3,4,6,8,9]) # columns' indeies converted to number
+    data = transpose(dataset)
+    
+    for i, column in enumerate(data):
+        if i in numbers:
+            for j, value in enumerate(column):
+                if isinstance(value, (int, float)):
+                    break # skip this this column of the table
+                if value == '':
+                    data[i][j] = 0
+                else:
+                    data[i][j] = float(int(value, 16)) if value.startswith('0x') else float(value)
+
+    print("data type transform finished!")
+    return transpose(data)
+
 def train_validate(*, conn=None, database="alu", table="data", classifier, clf_names, evaluate=get_classification_accuracy,\
-        train_fraction=0.6, cluster_column_names=["Source address"], exclude_attr_columns=None, \
+        train_fraction=0.6, cluster_column_names=None, exclude_attr_columns=None, \
         exclude_label_columns=None, k_cross_validation=0):
     """
     Training model and validate the model.
@@ -253,33 +263,44 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
                                     label_exclude_columns=exclude_label_columns)
     # get all the data and cluster columns
     data_rows, labels_values, cluster_values = get_attr_value_label_value_by_table(conn=conn, database=database, \
-                                                    table=table, cluster_columns=cluster_column_names,
-                                                    attr_exculde_columns=exclude_attr_columns,
+                                                    table=table, cluster_columns=cluster_column_names, \
+                                                    attr_exculde_columns=exclude_attr_columns, \
                                                     label_exclude_columns=exclude_attr_columns)
+
     # close connection
     if in_flag:
         db.close_connection()
+
+    # transform data from str type to their original type
+    data_rows = type_transform(data_rows)
 
     # split data set for training and validating
     trains, validates = split_fraction_for_train_validate(train_fraction, cluster_values, data_rows, cluster_values)
     
     # split feature labels and category labels
     # x is the list of feature labels, and y is the list of category labels
-    train_x, train_y = convert2num([t[0] for t in trains]), [t[1][0] for t in trains]
-    validate_x, validate_y = convert2num([v[0] for v in validates]), [v[1][0] for v in validates]
+    train_x, train_y = [t[0] for t in trains], [t[1][1] for t in trains]
+    validate_x, validate_y = [v[0] for v in validates], [v[1][1] for  v in validates]
     
-    # 归一化
-    train_x = normalization(train_x)
+    # normalize trainning set and validate set 归一化训练集和验证集
+    train_x, validate_x = normalization(train_x, validate_x)
+
+    # test
+    # num = 1000;
+    # train_x = train_x[:num]
+    # train_y = train_y[:num]
+
+    # validate_x = validate_x[:num]
+    # validate_y = validate_y[:num]
 
     evaluate_results = []
     if not isinstance(classifier, list):
         classifier = [classifier]
     for clf, c_name in zip(classifier, clf_names):
         # train
-        print(c_name,"training...")        
+        print(c_name,"training...")
         print( clf.fit(train_x, train_y) )
-        print(c_name, "predicting finished!")
-        print("training finished!")
+        print(c_name, "training finished!")
         
         # validate
         print(c_name,"predicting...")
@@ -294,56 +315,40 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
 
     return attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, validate_y, evaluate_results
 
-def get_max_min(x, *, min_func=None, max_func=None, value2num_func=str2num):
+
+def max_min_normalization(data):
     """
-    return 2 lists. The max and min of attributes in x (x must be a 2-d tensor)
+    normalization dataset.
+    If the dataset contains str, it will be transformed to float between 0~1
     """
-    max_list, min_list = [], []
+    data_set = []
+    for d in data:
+        tp_data = transpose(d) # transposed data
+        hash = {}
+        for col in tp_data:
+            if isinstance(col[0], (int, float)):
+                    continue
+            cols = list(set(col))
+            rg = len(cols)
+            for i, j in enumerate(cols):
+                hash[j] = i + 1
+            for i, d in enumerate(col): # transform str to float
+                col[i] = float(hash[d])/ rg
+        
+        data_set.append(transpose(tp_data))
+    return data_set
 
-    data = np.transpose(x) # 矩阵转置
-    for attrs in data:
-        # values = list(map(value2num_func, attrs)) # 直接哈希时使用
-
-        values = attrs # map 计数时使用
-        min_attr, max_attr = min(values), max(values)
-
-        max_list.append(max_attr)
-        min_list.append(min_attr)
-    
-    return max_list, min_list
-
-def max_min_normalization(data, value2num_func):
-    """
-    极值归一化
-    data 必须为2维张量, 形式如同数据库, 每行为一个记录
-    返回归一化之后的数据
-    """
-    from collections import OrderedDict as Dict
-    max_min = Dict
-
-    min_attrs, max_attrs = get_max_min(data)
-    data_tran = np.transpose(data)
-
-    for diction, max_num, min_num, col in zip(dicts, min_attrs, max_attrs, data_tran):
-        rg = max_num - min_num
-        for i, d in enumerate(col):
-            col[i] = 1.0 if rg == 0 else float(value2num_func(d, diction) - min_num) / rg
-    
-    return np.transpose(data_tran)
-
-def normalization(data, normalize_method="max_min", value2num_func=str2num):
+def normalization(*data, normalize_method="max_min"):
     print("data normalization...")
-    res =  eval(normalize_method+"_normalization(data, value2num_func)") # dynamically call normalization
+    res =  eval(normalize_method+"_normalization(data)") # dynamically call normalization
     print("normalization finished!")
     return res
-
 
 def init_classifiers():
     """
     Return classifiers names and classifiers
     """
     print("import pakgs...")
-    import numpy as np
     # import matplotlib.pyplot as plt
     from matplotlib.colors import ListedColormap
     from sklearn.model_selection import train_test_split
@@ -363,20 +368,27 @@ def init_classifiers():
     print("init classifers...")
     svc_default = SVC()
     C = 1.0  # SVM regularization parameter
-    svc = SVC(kernel='linear', C=C)
+    # svc = SVC(kernel='linear', C=C)
     rbf_svc = SVC(kernel='rbf', gamma=0.7, C=C)
     poly_svc = SVC(kernel='poly', degree=3, C=C)
-    lin_svc = LinearSVC(C=C)
+    # lin_svc = LinearSVC(C=C)
 
     # title for the plots
 
-    names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
-         "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
-         "Naive Bayes", "QDA"]
+    names = ["Nearest Neighbors", 
+        # "Linear SVM", 
+        "RBF SVM", 
+        "Gaussian Process",
+        "Decision Tree", 
+        "Random Forest", 
+        "Neural Net", 
+        "AdaBoost",
+        "Naive Bayes", 
+        "QDA"]
 
     titles = ['my_SVC with default settings',
-            'my_SVC with linear kernel',
-            'my_LinearSVC (linear kernel)',
+            # 'my_SVC with linear kernel',
+            # 'my_LinearSVC (linear kernel)',
             'my_SVC with RBF kernel',
             'my_SVC with polynomial (degree 3) kernel']
     
@@ -384,8 +396,8 @@ def init_classifiers():
 
     # add classifiers to list
     classifiers = [
-    KNeighborsClassifier(3),
-    SVC(kernel="linear", C=0.025),
+    KNeighborsClassifier(30),
+    # SVC(kernel="linear", C=0.025),
     SVC(gamma=2, C=1),
     GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
     DecisionTreeClassifier(max_depth=5),
@@ -396,10 +408,10 @@ def init_classifiers():
     QuadraticDiscriminantAnalysis()]
 
     classifiers.append(svc_default)
-    classifiers.append(svc)
+    # classifiers.append(svc)
+    # classifiers.append(lin_svc)    
     classifiers.append(rbf_svc)
     classifiers.append(poly_svc)
-    classifiers.append(lin_svc)
     print("init classifers done!")
 
     return names, classifiers
@@ -409,16 +421,6 @@ def print_res(classifier_names, evaluate_results):
         print(c_name, res)
 
 
-def test():
-    x = [[1, 2, 3, "abc"], ["ack", "heheda","megmegd"], [4,5,6,"def"]]
-    print(normalization(x))
-    # # y = x[:, :2]
-    # print("hehe", x[:,0])
-    # print(x[:,0].max())
-
-    # print(np.shape(max_min_normalization(x)))
-    # print(np.shape(normalization(x)))
-
 def main():
     # initialize
     names, classifiers = init_classifiers()
@@ -426,10 +428,9 @@ def main():
     # train and validate
     attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, \
         validate_y, evaluate_res = train_validate(train_fraction=0.8, classifier=classifiers, \
-                clf_names=names, exclude_attr_columns=["Time", "Source address", "TSF Timestamp"])
+                clf_names=names, exclude_attr_columns=["Time", "Protocol", " Source address", "Destination", "TSF timestamp", "Qos Control Field"])
     
     print_res(names, evaluate_res)
 
 if __name__ == '__main__':
     main()
-    # test()    

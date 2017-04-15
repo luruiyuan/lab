@@ -2,6 +2,8 @@
 
 
 def str2int(s, dictionary):
+    if isinstance(s, (int, float)):
+        return s
     if s in dictionary:
         return dictionary[s]
     id = len(dictionary)
