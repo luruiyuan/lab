@@ -312,26 +312,29 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
     train_n_x, validate_n_x = normalization(train_x, validate_x)
 
     # split dataset into smaller set
-    train_n_x = array_split(train_n_x)
-    validate_n_x = array_split(validate_n_x)
-    
+    # train_n_x = array_split(train_n_x)
+    # train_y = array_split(train_y)
+    # validate_n_x = array_split(validate_n_x)
+    # validate_y = array_split(validate_y)
+
+    # predict_label = [] # 分组验证标签
     evaluate_results = []
     if not isinstance(classifier, list):
         classifier = [classifier]
     for clf, c_name in zip(classifier, clf_names):
         # train
         print(c_name,"training...")
-        for x,y in zip(train_n_x, train_y): # 分组训练，防止内存溢出
-            print(clf.fit(x,y))
-        # print( clf.fit(train_n_x, train_y) )# 无分组训练
+        # for x,y in zip(train_n_x, train_y): # 分组训练，防止内存溢出
+        #     print(clf.fit(x,y))
+        print( clf.fit(train_n_x, train_y) ) # 无分组训练
         print(c_name, "training finished!")
         
         # validate
         print(c_name,"predicting...")
-        predict_labels = [] # 分组验证防止内存溢出
-        for x in validate_n_x:
-            predict_label.append(list(clf.predict(x))) # 分组验证防止内存溢出
-        # predict_label = list(clf.predict(validate_n_x)) # 无分组验证
+        # predict_labels = [] # 分组验证防止内存溢出
+        # for x in validate_n_x:
+        #     predict_label.append(list(clf.predict(x))) # 分组验证防止内存溢出
+        predict_label = list(clf.predict(validate_n_x)) # 无分组验证
         print(c_name, "predicting finished!")
         
         # evaluate model
@@ -408,7 +411,7 @@ def init_classifiers():
     names = ["Nearest Neighbors", 
         # "Linear SVM", 
         "RBF SVM", 
-        "Gaussian Process",
+        # "Gaussian Process",
         "Decision Tree", 
         "Random Forest", 
         "Neural Net", 
@@ -429,7 +432,7 @@ def init_classifiers():
     KNeighborsClassifier(30),
     # SVC(kernel="linear", C=0.025),
     SVC(gamma=2, C=1),
-    GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
+    # GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
     DecisionTreeClassifier(max_depth=5),
     RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
     MLPClassifier(alpha=1),
