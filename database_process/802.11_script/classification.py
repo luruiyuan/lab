@@ -218,6 +218,25 @@ def type_transform(dataset):
     print("data type transform finished!")
     return transpose(data)
 
+def array_split(data, split_num=5000):
+    print("dividing dataset into %d per set..." % split_num)
+    arrays = []
+    tmp = []
+    for i, row in enumerate(data):
+        tmp.append(row)
+        i += 1
+        if i == len(data) or i % split_num == 0 and i > 0:
+            arrays.append(tmp)
+            tmp = []
+    print("dividing dataset into %d per set finished!" % split_num)    
+    return arrays
+
+def array_merge(data):
+    print("merging dataset into one piece...")
+    merge = [d for array in data for d in array] # 先循环 array in data, 再循环 d in array
+    print("merging finished!")
+    return merge   
+
 #@profile
 def train_validate(*, conn=None, database="alu", table="data", classifier, clf_names, evaluate=get_classification_accuracy,\
         train_fraction=0.6, cluster_column_names=None, exclude_attr_columns=None, \
@@ -291,30 +310,33 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
     
     # normalize trainning set and validate set 归一化训练集和验证集
     train_n_x, validate_n_x = normalization(train_x, validate_x)
-    
-    del(data_rows, train_x, validate_x)
-    import gc
-    gc.collect()
 
-    # test
-    # return None, None, None, None, None, None, None, None, None
-    # test
+    # split dataset into smaller set
+    train_n_x = array_split(train_n_x)
+    validate_n_x = array_split(validate_n_x)
+    
     evaluate_results = []
     if not isinstance(classifier, list):
         classifier = [classifier]
     for clf, c_name in zip(classifier, clf_names):
         # train
         print(c_name,"training...")
-        print( clf.fit(train_n_x, train_y) )
+        for x,y in zip(train_n_x, train_y): # 分组训练，防止内存溢出
+            print(clf.fit(x,y))
+        # print( clf.fit(train_n_x, train_y) )# 无分组训练
         print(c_name, "training finished!")
         
         # validate
         print(c_name,"predicting...")
-        predict_label = list(clf.predict(validate_n_x))
+        predict_labels = [] # 分组验证防止内存溢出
+        for x in validate_n_x:
+            predict_label.append(list(clf.predict(x))) # 分组验证防止内存溢出
+        # predict_label = list(clf.predict(validate_n_x)) # 无分组验证
         print(c_name, "predicting finished!")
         
         # evaluate model
         print(c_name,"evaluating...")
+        predict_labels = array_merge(predict_labels) # 分组验证防止内存溢出
         evaluate_res = evaluate(predict_labels=predict_label, correct_labels=validate_y)
         evaluate_results.append(evaluate_res)
         print(c_name,"evaluating finished!")

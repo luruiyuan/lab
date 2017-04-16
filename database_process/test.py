@@ -84,3 +84,32 @@ sys.path.append(s)
 import db_process
 print("ok")
 
+def array_split(data, split_num=5000):
+    print(split_num)
+    arrays = []
+    tmp = []
+    for i, row in enumerate(data):
+        tmp.append(row)
+        i += 1
+        if i == len(data) or i % split_num == 0 and i > 0:
+            arrays.append(tmp)
+            tmp = []
+    return arrays
+
+
+data = [
+    [1,2,3],
+    [4,5,6],
+    [7,8,9]
+]
+split = array_split(data, 2)
+print(split)
+
+def array_merge(data):
+    print("merging dataset into one piece...")
+    merge = [d for array in data for d in array]
+    print("merging finished!")
+    return merge    
+
+merge = array_merge(split)
+print(merge)
