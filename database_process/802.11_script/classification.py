@@ -339,7 +339,7 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
         
         # evaluate model
         print(c_name,"evaluating...")
-        predict_labels = array_merge(predict_labels) # 分组验证防止内存溢出
+        # predict_labels = array_merge(predict_labels) # 分组验证防止内存溢出
         evaluate_res = evaluate(predict_labels=predict_label, correct_labels=validate_y)
         evaluate_results.append(evaluate_res)
         print(c_name,"evaluating finished!")
