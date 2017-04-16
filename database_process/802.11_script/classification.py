@@ -17,7 +17,7 @@ from str2num import str2int as str2num
 
 import numpy as np
 # import matplotlib.pyplot as plt
-
+@profile
 def get_all_column_names_by_table(*, conn, database="alu", table="data"):
     """
     fetch all columns' names and return a list contains these names.
@@ -40,6 +40,7 @@ def del_item_in_list(item_list, *del_items, generate_copy=True):
             return_list.remove(item)
     return return_list
 
+@profile
 def get_attr_names_label_names_by_table(*, conn, database="alu", table="data", attr_include_columns=None, \
         attr_exculde_columns=None, label_include_columns=None, label_exclude_columns=None):
     """
@@ -78,6 +79,7 @@ def get_attr_names_label_names_by_table(*, conn, database="alu", table="data", a
     print("generate attribute/label names succeeded!")
     return attr_names, label_names
 
+@profile
 def get_attr_value_label_value_by_table(*, conn, database="alu", table="data",
         cluster_columns = None, \
         attr_exculde_columns=None, label_exclude_columns=None):
@@ -123,9 +125,10 @@ def get_attr_value_label_value_by_table(*, conn, database="alu", table="data",
         data_rows.append([m[name] for name in attr_names])
         labels_values.append([m[label] for label in label_names])
         cluster_values.append([m[id] for id in cluster_columns])
-    
+    cursor.close()
     return data_rows, labels_values, cluster_values
 
+@profile
 def split_fraction_for_train_validate(train_fraction, clusters, data_rows, labels, index):
     """
     @Params:
@@ -173,6 +176,7 @@ def split_fraction_for_train_validate(train_fraction, clusters, data_rows, label
 
     return train, validate
 
+@profile
 def get_classification_accuracy(*, predict_labels, correct_labels):
     print("start accuracy calculation...")
     accuracy = .0
@@ -192,6 +196,7 @@ def transpose(dataset):
     print("data transposed succeeded!")        
     return data
 
+@profile
 def type_transform(dataset):
     """
     transform data from str to number
@@ -213,6 +218,7 @@ def type_transform(dataset):
     print("data type transform finished!")
     return transpose(data)
 
+@profile
 def train_validate(*, conn=None, database="alu", table="data", classifier, clf_names, evaluate=get_classification_accuracy,\
         train_fraction=0.6, cluster_column_names=None, exclude_attr_columns=None, \
         exclude_label_columns=None, k_cross_validation=0):
@@ -284,20 +290,27 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
     validate_x, validate_y = [v[0] for v in validates], [v[1][1] for  v in validates]
     
     # normalize trainning set and validate set 归一化训练集和验证集
-    train_x, validate_x = normalization(train_x, validate_x)
+    train_n_x, validate_n_x = normalization(train_x, validate_x)
+    
+    del(data_rows, train_x, validate_x)
+    import gc
+    gc.collect()
 
+    # test
+    return None, None, None, None, None, None, None, None, None
+    # test
     evaluate_results = []
     if not isinstance(classifier, list):
         classifier = [classifier]
     for clf, c_name in zip(classifier, clf_names):
         # train
         print(c_name,"training...")
-        print( clf.fit(train_x, train_y) )
+        print( clf.fit(train_n_x, train_y) )
         print(c_name, "training finished!")
         
         # validate
         print(c_name,"predicting...")
-        predict_label = list(clf.predict(validate_x))
+        predict_label = list(clf.predict(validate_n_x))
         print(c_name, "predicting finished!")
         
         # evaluate model
@@ -308,7 +321,7 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
 
     return attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, validate_y, evaluate_results
 
-
+@profile
 def max_min_normalization(data):
     """
     normalization dataset.
@@ -331,12 +344,14 @@ def max_min_normalization(data):
         data_set.append(transpose(tp_data))
     return data_set
 
+@profile
 def normalization(*data, normalize_method="max_min"):
     print("data normalization...")
     res =  eval(normalize_method+"_normalization(data)") # dynamically call normalization
     print("normalization finished!")
     return res
 
+@profile
 def init_classifiers():
     """
     Return classifiers names and classifiers
@@ -420,10 +435,10 @@ def main():
 
     # train and validate
     attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, \
-        validate_y, evaluate_res = train_validate(train_fraction=0.8, classifier=classifiers, \
+        validate_y, evaluate_res = train_validate(train_fraction=0.6, classifier=classifiers, \
                 clf_names=names, exclude_attr_columns=["Time", "Protocol", " Source address", "Destination", "TSF timestamp", "Qos Control Field"])
     
-    print_res(names, evaluate_res)
+    # print_res(names, evaluate_res)
 
 if __name__ == '__main__':
     main()
