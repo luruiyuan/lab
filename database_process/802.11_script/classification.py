@@ -297,7 +297,7 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
     gc.collect()
 
     # test
-    return None, None, None, None, None, None, None, None, None
+    # return None, None, None, None, None, None, None, None, None
     # test
     evaluate_results = []
     if not isinstance(classifier, list):
