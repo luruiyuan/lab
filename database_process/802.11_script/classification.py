@@ -15,6 +15,10 @@ import db_process as db
 from db_process import __check_db_is_set__ as checkdb, __check_space_in_column_name__ as checksp, __check_space_in_multi_column_names__ as checkmulsps
 from str2num import str2int as str2num
 
+# multiprocess_train_validate_manager
+from multiprocessing import cpu_count, Pool, Manager
+import os, time
+
 import numpy as np
 # import matplotlib.pyplot as plt
 #@profile
@@ -235,7 +239,71 @@ def array_merge(data):
     print("merging dataset into one piece...")
     merge = [d for array in data for d in array] # 先循环 array in data, 再循环 d in array
     print("merging finished!")
-    return merge   
+    return merge
+
+def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, clf_name, classifier, evaluate_func):
+    """
+    concurrent trainning, validation and evaluate
+    """
+    res, start = {"name": clf_name}, time.time()
+    # train
+    print(clf_name,"training...")
+    print( classifier.fit(train_x, train_y) ) # 训练
+    print(clf_name, "training finished! Time: %,3f seconds." % (time.time() - start))
+    res["clf"] = clf
+    
+    # validate
+    start = time.time()
+    print(clf_name,"predicting...")
+    predict_label = list(classifier.predict(validate_x)) # 验证
+    print(clf_name, "predicting finished! Time: %,3f seconds." % (time.time() - start))
+    res["result"] = predict_label
+    
+    # evaluate
+    start = time.time()    
+    print(clf_name,"evaluating...")
+    res["evaluate"] = evaluate_func(predict_labels=predict_label, correct_labels=validate_y)
+    print(clf_name,"evaluating finished! Time: %,3f seconds." % (time.time() - start))
+    
+    # put res into message queue
+    msg_que.put(res)
+
+
+def multiprocess_train_validate_manager(train_x, train_y, validate_x, validate_y, clf_names, classifiers, evaluate_func):
+    """
+    manage the concurrence of trainning, prediction and evaluate
+    """
+    # define a result queue
+    q = Manager().Queue() # multiprocessing manager queue
+
+    # calculate process time
+
+    # init process pool
+    pool = Pool(cpu_count())
+
+    print("starting multiprocess_train_validate_manager...\nprocess pool size: %d clf number: %d" % (cpu_count(), len(clf_names)))
+    whole_start = time.time()
+    # multiprocessing
+    for name, clf in zip(clf_names, classifiers):
+        pool.apply_async(train_validate_worker, args=(q,train_x, train_y, validate_x, validate_y, name, clf, evaluate_func))
+    # waiting for processing finished
+    pool.close()
+    pool.join()
+    
+    whole_end = time.time()
+    print("whole time for training, validation and evaluating: %.3f seconds." % (whole_end - whole_start))
+    # gather results from result queue
+    clf_names, clfs, predict_res, evaluates = [], [], [], []
+    while not q.empty():
+        res = q.get()
+        clfs.append(res["clf"])
+        predict_res.append(res["result"])
+        clf_names.append(res["name"])
+        evaluates.append(res["evaluate"])
+    
+    return clfs, clf_names, predict_res, evaluates
+
+
 
 #@profile
 def train_validate(*, conn=None, database="alu", table="data", classifier, clf_names, evaluate=get_classification_accuracy,\
@@ -311,40 +379,13 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
     # normalize trainning set and validate set 归一化训练集和验证集
     train_n_x, validate_n_x = normalization(train_x, validate_x)
 
-    # split dataset into smaller set
-    # train_n_x = array_split(train_n_x)
-    # train_y = array_split(train_y)
-    # validate_n_x = array_split(validate_n_x)
-    # validate_y = array_split(validate_y)
+    # train and validate using multiprocessing
+    clfs, clf_names, predict_res, evaluates = multiprocess_train_validate_manager(train_n_x, \
+                                                train_y, validate_n_x, validate_y, clf_names, \
+                                                classifier, evaluate)
 
-    # predict_label = [] # 分组验证标签
-    evaluate_results = []
-    if not isinstance(classifier, list):
-        classifier = [classifier]
-    for clf, c_name in zip(classifier, clf_names):
-        # train
-        print(c_name,"training...")
-        # for x,y in zip(train_n_x, train_y): # 分组训练，防止内存溢出
-        #     print(clf.fit(x,y))
-        print( clf.fit(train_n_x, train_y) ) # 无分组训练
-        print(c_name, "training finished!")
-        
-        # validate
-        print(c_name,"predicting...")
-        # predict_labels = [] # 分组验证防止内存溢出
-        # for x in validate_n_x:
-        #     predict_label.append(list(clf.predict(x))) # 分组验证防止内存溢出
-        predict_label = list(clf.predict(validate_n_x)) # 无分组验证
-        print(c_name, "predicting finished!")
-        
-        # evaluate model
-        print(c_name,"evaluating...")
-        # predict_labels = array_merge(predict_labels) # 分组验证防止内存溢出
-        evaluate_res = evaluate(predict_labels=predict_label, correct_labels=validate_y)
-        evaluate_results.append(evaluate_res)
-        print(c_name,"evaluating finished!")
-
-    return attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, validate_y, evaluate_results
+    return attr_names, label_names, train_fraction, train_x, train_y, \
+            validate_x, validate_y, clf_names, clfs, predict_res, evaluates
 
 #@profile
 def max_min_normalization(data):
@@ -459,11 +500,12 @@ def main():
     names, classifiers = init_classifiers()
 
     # train and validate
-    attr_names, label_names, train_fraction, classifier, train_x, train_y, validate_x, \
-        validate_y, evaluate_res = train_validate(train_fraction=0.6, classifier=classifiers, \
-                clf_names=names, exclude_attr_columns=["Time", "Protocol", " Source address", "Destination", "TSF timestamp", "Qos Control Field"])
+    attr_names, label_names, train_fraction, train_x, train_y, validate_x, \
+        validate_y, clf_names, clfs, predict_res, \
+        evaluate_res = train_validate(train_fraction=0.6, classifier=classifiers, \
+        clf_names=names, exclude_attr_columns=["Time", "Protocol", " Source address", "Destination", "TSF timestamp", "Qos Control Field"])
     
-    # print_res(names, evaluate_res)
+    # print_res(clf_names, evaluate_res)
 
 if __name__ == '__main__':
     main()

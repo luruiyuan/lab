@@ -113,3 +113,60 @@ def array_merge(data):
 
 merge = array_merge(split)
 print(merge)
+
+# 测试并发编程
+# from multiprocessing import Process
+# import os
+
+# def run_proc(name):
+#     print("Run child process %s (%s)..." % (name, os.getppid()))
+
+# if __name__ == "__main__":
+#     print("Parent proccess %s." % os.getppid())
+#     p = Process(target=run_proc, args=('test',))
+#     print("child will start.")
+#     p.start()
+#     p.join()
+#     print("child process end.")
+
+# 测试进程池
+from multiprocessing import Pool
+import os, time, random
+
+def long_time_task(name):
+    print("在子进程中")
+    raise Exception("hehe")
+    print("Run task %s (%s)..." % (name, os.getpid()))
+    start = time.time()
+    time.sleep(random.random() * 3) # 随机延时一定长度
+    end = time.time()
+    print("Task %s runs %.2f seconds." % (name, end - start))
+    return name + "cao"
+
+if __name__ == "__main__":
+    print("Parent process %s." % os.getpid())
+    p = Pool(4)
+    for i in range(5):
+        p.apply_async(long_time_task, args=(i, ))
+    p.close()
+    p.join()
+    print("all subprocesses done.")
+
+import os
+from multiprocessing import cpu_count, Queue
+q = Queue()
+cpu = cpu_count()
+global results
+pool = Pool(cpu)
+
+for i in range(cpu):
+    pass
+
+print("cpu 数目:",cpu_count())
+q.put(["1,2,3"])
+q.put(["1"])
+
+print(q.get())
+print(q.get_nowait())
+
+print(list(q))
