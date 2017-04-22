@@ -250,7 +250,7 @@ def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, clf
     print(clf_name,"training...")
     print( classifier.fit(train_x, train_y) ) # 训练
     print(clf_name, "training finished! Time: %.3f seconds." % (time.time() - start))
-    res["clf"] = clf
+    res["clf"] = classifier
     
     # validate
     start = time.time()
