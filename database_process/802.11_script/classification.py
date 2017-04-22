@@ -266,7 +266,9 @@ def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, clf
     print(clf_name,"evaluating finished! Time: %.3f seconds." % (time.time() - start))
     
     # put res into message queue
+    print("is here")
     msg_que.put(res)
+    print("finished yes ")
 
 
 def multiprocess_train_validate_manager(train_x, train_y, validate_x, validate_y, clf_names, classifiers, evaluate_func):
@@ -441,16 +443,16 @@ def init_classifiers():
     print("import done!")
 
     print("init classifers...")
-    svc_default = SVC()
-    C = 1.0  # SVM regularization parameter
+    # svc_default = SVC()
+    # C = 1.0 SVM regularization parameter
     # svc = SVC(kernel='linear', C=C)
-    rbf_svc = SVC(kernel='rbf', gamma=0.7, C=C)
-    poly_svc = SVC(kernel='poly', degree=3, C=C)
+    # rbf_svc = SVC(kernel='rbf', gamma=0.7, C=C)
+    # poly_svc = SVC(kernel='poly', degree=3, C=C)
     # lin_svc = LinearSVC(C=C)
 
     # title for the plots
 
-    names = ["Nearest Neighbors", 
+    names = ["Nearest Neighbors",
         # "Linear SVM", 
         "RBF SVM", 
         # "Gaussian Process",
