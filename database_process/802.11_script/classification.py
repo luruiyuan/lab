@@ -287,6 +287,7 @@ def multiprocess_train_validate_manager(train_x, train_y, validate_x, validate_y
     for name, clf in zip(clf_names, classifiers):
         pool.apply_async(train_validate_worker, args=(q,train_x, train_y, validate_x, validate_y, name, clf, evaluate_func))
     # waiting for processing finished
+    print("processing pool is closing!")
     pool.close()
     pool.join()
     
@@ -505,7 +506,7 @@ def main():
         evaluate_res = train_validate(train_fraction=0.6, classifier=classifiers, \
         clf_names=names, exclude_attr_columns=["Time", "Protocol", " Source address", "Destination", "TSF timestamp", "Qos Control Field"])
     
-    # print_res(clf_names, evaluate_res)
+    print_res(clf_names, evaluate_res)
 
 if __name__ == '__main__':
     main()
