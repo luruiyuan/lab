@@ -460,13 +460,13 @@ def init_classifiers():
         "Naive Bayes", 
         "QDA"]
 
-    titles = ['my_SVC with default settings',
-            # 'my_SVC with linear kernel',
-            # 'my_LinearSVC (linear kernel)',
-            'my_SVC with RBF kernel',
-            'my_SVC with polynomial (degree 3) kernel']
+    # titles = ['my_SVC with default settings',
+    #         # 'my_SVC with linear kernel',
+    #         # 'my_LinearSVC (linear kernel)',
+    #         'my_SVC with RBF kernel',
+    #         'my_SVC with polynomial (degree 3) kernel']
     
-    names.extend(titles)
+    # names.extend(titles)
 
     # add classifiers to list
     classifiers = [
@@ -481,11 +481,11 @@ def init_classifiers():
     GaussianNB(),
     QuadraticDiscriminantAnalysis()]
 
-    classifiers.append(svc_default)
+    # classifiers.append(svc_default)
     # classifiers.append(svc)
     # classifiers.append(lin_svc)    
-    classifiers.append(rbf_svc)
-    classifiers.append(poly_svc)
+    # classifiers.append(rbf_svc)
+    # classifiers.append(poly_svc)
     print("init classifers done!")
 
     return names, classifiers
