@@ -249,21 +249,21 @@ def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, clf
     # train
     print(clf_name,"training...")
     print( classifier.fit(train_x, train_y) ) # 训练
-    print(clf_name, "training finished! Time: %,3f seconds." % (time.time() - start))
+    print(clf_name, "training finished! Time: %.3f seconds." % (time.time() - start))
     res["clf"] = clf
     
     # validate
     start = time.time()
     print(clf_name,"predicting...")
     predict_label = list(classifier.predict(validate_x)) # 验证
-    print(clf_name, "predicting finished! Time: %,3f seconds." % (time.time() - start))
+    print(clf_name, "predicting finished! Time: %.3f seconds." % (time.time() - start))
     res["result"] = predict_label
     
     # evaluate
     start = time.time()    
     print(clf_name,"evaluating...")
     res["evaluate"] = evaluate_func(predict_labels=predict_label, correct_labels=validate_y)
-    print(clf_name,"evaluating finished! Time: %,3f seconds." % (time.time() - start))
+    print(clf_name,"evaluating finished! Time: %.3f seconds." % (time.time() - start))
     
     # put res into message queue
     msg_que.put(res)
