@@ -17,9 +17,12 @@ sess.close()
 
 def build_neral_network_model(in_shape=[None, 6]):
     net = tflearn.input_data(shape=in_shape)
-    net = tflearn.fully_connected(net, 32)
-    net = tflearn.fully_connected(net, 32)
-    net = tflearn.fully_connected(net, 31, activation="softmax")
+    net = tflearn.fully_connected(net, 32, activation="relu")
+    net = tflearn.fully_connected(net, 64, activation="relu")
+    net = tflearn.fully_connected(net, 128, activation="relu")
+    net = tflearn.fully_connected(net, 64, activation="relu")
+    net = tflearn.fully_connected(net, 32, activation="relu")
+    net = tflearn.fully_connected(net, 31, activation="relu")
     net = tflearn.regression(net)
 
     return tflearn.DNN(net)
@@ -87,5 +90,5 @@ label_list = get_label_list(look_up_table) # using this we can find label by id
 train_y = transform_label_to_vector(train_y, look_up_table) # transform label type from str to vector
 validate_y = transform_label_to_vector(validate_y, look_up_table)
 
-model.fit(train_x, train_y, n_epoch=100000, batch_size=128, show_metric=False, )
+model.fit(train_x, train_y, n_epoch=10000, batch_size=128, show_metric=True)
 pred = model.predict(validate_x)
