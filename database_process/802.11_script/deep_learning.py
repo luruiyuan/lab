@@ -22,8 +22,8 @@ def build_neral_network_model(in_shape=[None, 6]):
     net = tflearn.fully_connected(net, 128, activation="relu")
     net = tflearn.fully_connected(net, 64, activation="relu")
     net = tflearn.fully_connected(net, 32, activation="relu")
-    net = tflearn.fully_connected(net, 31, activation="relu")
-    net = tflearn.regression(net)
+    net = tflearn.fully_connected(net, 31, activation="softmax")
+    net = tflearn.regression(net, learning_rate=0.001)
 
     return tflearn.DNN(net)
 
