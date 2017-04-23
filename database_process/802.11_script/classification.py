@@ -249,14 +249,14 @@ def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, clf
     # train
     print(clf_name,"training...")
     info = classifier.fit(train_x, train_y)
-    print( info ) # 训练
+    print( info ) # print classifier info
     print(clf_name, "training finished! Time: %.3f seconds." % (time.time() - start))
     res["clf"] = classifier
     
     # validate
     start = time.time()
     print(clf_name,"predicting...")
-    predict_label = list(classifier.predict(validate_x)) # 验证
+    predict_label = list(classifier.predict(validate_x)) # generate validate label
     print(clf_name, "predicting finished! Time: %.3f seconds." % (time.time() - start))
     res["result"] = predict_label
     
@@ -423,7 +423,7 @@ def init_classifiers():
     """
     Return classifiers names and classifiers
     """
-    print("import pakgs...")
+    print("import packages...")
     # import matplotlib.pyplot as plt
     from matplotlib.colors import ListedColormap
     from sklearn.model_selection import train_test_split
@@ -441,15 +441,8 @@ def init_classifiers():
     print("import done!")
 
     print("init classifers...")
-    # svc_default = SVC()
-    # C = 1.0 SVM regularization parameter
-    # svc = SVC(kernel='linear', C=C)
-    # rbf_svc = SVC(kernel='rbf', gamma=0.7, C=C)
-    # poly_svc = SVC(kernel='poly', degree=3, C=C)
-    # lin_svc = LinearSVC(C=C)
 
     # title for the plots
-
     names = ["Nearest Neighbors",
         # "Linear SVM", 
         "RBF SVM",
@@ -461,13 +454,6 @@ def init_classifiers():
         "Naive Bayes", 
         "QDA"]
 
-    # titles = ['my_SVC with default settings',
-    #         # 'my_SVC with linear kernel',
-    #         # 'my_LinearSVC (linear kernel)',
-    #         'my_SVC with RBF kernel',
-    #         'my_SVC with polynomial (degree 3) kernel']
-    
-    # names.extend(titles)
 
     # add classifiers to list
     classifiers = [
@@ -482,11 +468,6 @@ def init_classifiers():
     GaussianNB(),
     QuadraticDiscriminantAnalysis()]
 
-    # classifiers.append(svc_default)
-    # classifiers.append(svc)
-    # classifiers.append(lin_svc)    
-    # classifiers.append(rbf_svc)
-    # classifiers.append(poly_svc)
     print("init classifers done!")
 
     return names, classifiers
@@ -494,7 +475,6 @@ def init_classifiers():
 def print_res(classifier_names, evaluate_results):
     for c_name, res in zip(classifier_names, evaluate_results):
         print(c_name, res)
-
 
 def main():
     # initialize
