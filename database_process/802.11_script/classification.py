@@ -304,12 +304,45 @@ def multiprocess_train_validate_manager(train_x, train_y, validate_x, validate_y
     
     return clfs, clf_names, predict_res, evaluates
 
+def get_data_label(*, conn=None, database="alu", table="data",train_fraction=0.6, cluster_column_names=None, exclude_attr_columns=None, exclude_label_columns=None):
+    in_flag = False
+    if conn is None or not conn.open:
+        conn = db.create_connection()
+        in_flag = True # flag if the connection is opened in this function
+    
+    # get attributes column names and label column names
+    attr_names, label_names = get_attr_names_label_names_by_table(conn=conn, database=database,
+                                    table=table, attr_exculde_columns=exclude_attr_columns,
+                                    label_exclude_columns=exclude_label_columns)
+    # get all the data and cluster columns
+    data_rows, labels_values, cluster_values = get_attr_value_label_value_by_table(conn=conn, database=database, \
+                                                    table=table, cluster_columns=cluster_column_names, \
+                                                    attr_exculde_columns=exclude_attr_columns, \
+                                                    label_exclude_columns=exclude_attr_columns)
 
+    # close connection
+    if in_flag:
+        db.close_connection()
+
+    # transform data from str type to their original type
+    data_rows = type_transform(data_rows)
+
+    # split data set for training and validating
+    trains, validates = split_fraction_for_train_validate(train_fraction, cluster_values, data_rows, cluster_values, 1)
+    
+    # split feature labels and category labels
+    # x is the list of feature labels, and y is the list of category labels
+    train_x, train_y = [t[0] for t in trains], [t[1][1] for t in trains]
+    validate_x, validate_y = [v[0] for v in validates], [v[1][1] for  v in validates]
+    
+    # normalize trainning set and validate set 
+    train_x, validate_x = normalization(train_x, validate_x)
+    
+    return attr_names, label_names, train_fraction, train_x, train_y, validate_x, validate_y
 
 #@profile
-def train_validate(*, conn=None, database="alu", table="data", classifier, clf_names, evaluate=get_classification_accuracy,\
-        train_fraction=0.6, cluster_column_names=None, exclude_attr_columns=None, \
-        exclude_label_columns=None, k_cross_validation=0):
+def train_validate(*, conn=None, database="alu", table="data",train_fraction=0.6, classifier, clf_names, \
+        cluster_column_names=None, exclude_attr_columns=None, exclude_label_columns=None, evaluate=get_classification_accuracy, k_cross_validation=0):
     """
     Training model and validate the model.
 
@@ -347,42 +380,13 @@ def train_validate(*, conn=None, database="alu", table="data", classifier, clf_n
                 evaluate_res = evaluate(predict_labels=predict_label, correct_labels=validate_y)
     """
 
-    in_flag = False
-    if conn is None or not conn.open:
-        conn = db.create_connection()
-        in_flag = True # flag if the connection is opened in this function
-    
-    # get attributes column names and label column names
-    attr_names, label_names = get_attr_names_label_names_by_table(conn=conn, database=database,
-                                    table=table, attr_exculde_columns=exclude_attr_columns,
-                                    label_exclude_columns=exclude_label_columns)
-    # get all the data and cluster columns
-    data_rows, labels_values, cluster_values = get_attr_value_label_value_by_table(conn=conn, database=database, \
-                                                    table=table, cluster_columns=cluster_column_names, \
-                                                    attr_exculde_columns=exclude_attr_columns, \
-                                                    label_exclude_columns=exclude_attr_columns)
-
-    # close connection
-    if in_flag:
-        db.close_connection()
-
-    # transform data from str type to their original type
-    data_rows = type_transform(data_rows)
-
-    # split data set for training and validating
-    trains, validates = split_fraction_for_train_validate(train_fraction, cluster_values, data_rows, cluster_values, 1)
-    
-    # split feature labels and category labels
-    # x is the list of feature labels, and y is the list of category labels
-    train_x, train_y = [t[0] for t in trains], [t[1][1] for t in trains]
-    validate_x, validate_y = [v[0] for v in validates], [v[1][1] for  v in validates]
-    
-    # normalize trainning set and validate set 归一化训练集和验证集
-    train_n_x, validate_n_x = normalization(train_x, validate_x)
+    attr_names, label_names, train_fraction, \
+        train_x, train_y, validate_x, validate_y = get_data_label(conn=conn, database=database, table=table,train_fraction=train_fraction, \
+                cluster_column_names=cluster_column_names, exclude_attr_columns=exclude_attr_columns, exclude_label_columns=exclude_label_columns)
 
     # train and validate using multiprocessing
-    clfs, clf_names, predict_res, evaluates = multiprocess_train_validate_manager(train_n_x, \
-                                                train_y, validate_n_x, validate_y, clf_names, \
+    clfs, clf_names, predict_res, evaluates = multiprocess_train_validate_manager(train_x, \
+                                                train_y, validate_x, validate_y, clf_names, \
                                                 classifier, evaluate)
 
     return attr_names, label_names, train_fraction, train_x, train_y, \

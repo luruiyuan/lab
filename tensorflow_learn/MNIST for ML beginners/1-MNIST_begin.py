@@ -22,9 +22,7 @@ https://www.tensorflow.org/get_started/mnist/beginners
 
 # 第一个 from __future__ import 语句必须放在开头
 # 这与普通的 import 语句不同
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
