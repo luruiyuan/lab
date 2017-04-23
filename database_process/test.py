@@ -159,14 +159,28 @@ cpu = cpu_count()
 global results
 pool = Pool(cpu)
 
-for i in range(cpu):
-    pass
+# for i in range(cpu):
+#     pass
 
-print("cpu 数目:",cpu_count())
-q.put(["1,2,3"])
-q.put(["1"])
+# print("cpu 数目:",cpu_count())
+# q.put(["1,2,3"])
+# q.put(["1"])
 
-print(q.get())
-print(q.get_nowait())
+# print(q.get())
+# print(q.get_nowait())
 
-print(list(q))
+d = {j: i + 1 for (i, j) in enumerate(set([-1,-2,-3]))}
+print(d)
+print(len(d))
+print([d[i] for i in [-1,-2,-2,-3]])
+
+data = ["111","222","333"]
+look_up_table = {j: i for (i, j) in enumerate(set(data))}
+print("look_up_table:",look_up_table)
+
+x = [[1 if look_up_table[d] == k else 0 for k in range(len(look_up_table))] for d in data]
+print(x)
+# label_vectors = [1 if look_up_table[j] == k else 0 for d in data for k in len(look_up_table)]
+# print(label_vectors)
+x = [0.5,0.5]
+print(x.index(max(x)))

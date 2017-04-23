@@ -19,8 +19,6 @@ from str2num import str2int as str2num
 from multiprocessing import cpu_count, Pool, Manager
 import os, time
 
-import numpy as np
-# import matplotlib.pyplot as plt
 #@profile
 def get_all_column_names_by_table(*, conn, database="alu", table="data"):
     """
@@ -206,7 +204,7 @@ def type_transform(dataset):
     transform data from str to number
     """
     print("data type is being transformed!")
-    numbers = set([1,2,3,4,6,8,9]) # columns' indeies converted to number
+    numbers = set([0,1,2,3,5,7,8]) # columns' indeies converted to number
     data = transpose(dataset)
     
     for i, column in enumerate(data):
@@ -276,8 +274,6 @@ def multiprocess_train_validate_manager(train_x, train_y, validate_x, validate_y
     # define a result queue
     q = Manager().Queue() # multiprocessing manager queue
 
-    # calculate process time
-
     # init process pool
     pool = Pool(cpu_count())
 
@@ -323,7 +319,7 @@ def get_data_label(*, conn=None, database="alu", table="data",train_fraction=0.6
     # close connection
     if in_flag:
         db.close_connection()
-
+    
     # transform data from str type to their original type
     data_rows = type_transform(data_rows)
 
@@ -488,7 +484,7 @@ def main():
     attr_names, label_names, train_fraction, train_x, train_y, validate_x, \
         validate_y, clf_names, clfs, predict_res, \
         evaluate_res = train_validate(train_fraction=0.6, classifier=classifiers, \
-        clf_names=names, exclude_attr_columns=["Time", "Protocol", " Source address", "Destination", "TSF timestamp", "Qos Control Field"])
+        clf_names=names, exclude_attr_columns=["Time", "Protocol", "Source address", "Destination", "TSF timestamp", "Qos Control Field"])
     
     print_res(clf_names, evaluate_res)
 
