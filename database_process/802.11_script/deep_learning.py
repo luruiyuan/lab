@@ -261,7 +261,7 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
     # pool.close()
     # pool.join()
     
-    singal processing
+    # singal processing
     for title in titles:
         # reset graph, otherwise these code will raise:# feed_dict[net_inputs[i]] = x;IndexError: list index out of range
         tf.reset_default_graph() 
