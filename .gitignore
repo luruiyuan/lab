@@ -24,3 +24,6 @@ build
 *.meta
 checkpoint
 
+# Event log in TFlearn
+events.out.tfevents.*
+

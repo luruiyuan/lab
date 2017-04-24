@@ -300,32 +300,32 @@ print(s)
 l = dir()
 print(l)
 
-import tflearn
-net = tflearn.input_data(shape=[None, 1])
-net = tflearn.fully_connected(net, 32, activation="relu")
-net = tflearn.fully_connected(net, 64, activation="relu")
-net = tflearn.fully_connected(net, 128, activation="relu")
-net = tflearn.fully_connected(net, 64, activation="relu")
-net = tflearn.fully_connected(net, 32, activation="relu")
-net = tflearn.fully_connected(net, 2, activation="softmax")
-net = tflearn.regression(net, learning_rate=0.0009)
-model = tflearn.DNN(net)
+# import tflearn
+# net = tflearn.input_data(shape=[None, 1])
+# net = tflearn.fully_connected(net, 32, activation="relu")
+# net = tflearn.fully_connected(net, 64, activation="relu")
+# net = tflearn.fully_connected(net, 128, activation="relu")
+# net = tflearn.fully_connected(net, 64, activation="relu")
+# net = tflearn.fully_connected(net, 32, activation="relu")
+# net = tflearn.fully_connected(net, 2, activation="softmax")
+# net = tflearn.regression(net, learning_rate=0.0009)
+# model = tflearn.DNN(net)
 
-train_x = [[1],[2]]
-train_y = [[1,0],[0,1]]
+# train_x = [[1],[2]]
+# train_y = [[1,0],[0,1]]
 
-model.fit(train_x, train_y, n_epoch=1000, batch_size=128, show_metric=True)
+# model.fit(train_x, train_y, n_epoch=1000, batch_size=128, show_metric=True)
 
 
 # model.load("./database_process/802.11_script/model")
-model.save("./database_process/802.11_script/model")
+# model.save("./database_process/802.11_script/model")
 
-input(">")
-res = model.predict_label([[1],[2],[1]])
-print("res:", res)
-for i in res:
-    print(list(i))
-input("<")
+# input(">")
+# res = model.predict_label([[1],[2],[1]])
+# print("res:", res)
+# for i in res:
+#     print(list(i))
+# input("<")
 
 def get_timestamp():
     import time
@@ -351,7 +351,7 @@ def save_models(*, titles=[], models=[]):
     print("saving %d models finished!" % len(models))
     return root
 
-print(save_models(titles=["test","hehe"], models=[model, model]))
+# print(save_models(titles=["test","hehe"], models=[model, model]))
 
 # net = tflearn.fully_connected(net, 32, activation="relu")
 # net = tflearn.fully_connected(net, 64, activation="relu")
@@ -362,3 +362,6 @@ print(save_models(titles=["test","hehe"], models=[model, model]))
 # net = tflearn.regression(net, learning_rate=0.0001)
 
 # return tflearn.DNN(net)
+
+
+print(os.path.join("/usr/hehe", "title/"))
