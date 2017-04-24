@@ -18,3 +18,9 @@ build
 *.hbm
 *.properties
 
+# Model Weights in TFLearn
+*.data-00000-of-00001
+*.index
+*.meta
+checkpoint
+

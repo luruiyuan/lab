@@ -17,7 +17,7 @@ from str2num import str2int as str2num
 
 # multiprocess_train_validate_manager
 from multiprocessing import cpu_count, Pool, Manager
-import os, time
+import time
 
 #@profile
 def get_all_column_names_by_table(*, conn, database="alu", table="data"):
@@ -451,7 +451,7 @@ def init_classifiers():
         "Random Forest", 
         "Neural Net", 
         "AdaBoost",
-        "Naive Bayes", 
+        "Naive Bayes",
         "QDA"]
 
 

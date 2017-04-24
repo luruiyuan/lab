@@ -184,3 +184,181 @@ print(x)
 # print(label_vectors)
 x = [0.5,0.5]
 print(x.index(max(x)))
+
+def generate_multi_hidden_layer_nets_by_title(title):
+    import tflearn
+    t = title.split('_')
+    layer_num, hid_act, out_act, label_num = int(t[0]), t[2], t[-3], int(t[-1])
+    print(layer_num, hid_act, out_act, label_num)
+    node_num = 16
+    h = "net = tflearn.fully_connected(net, %d, activation='%s')" % (node_num, hid_act)
+    net = eval("tflearn.fully_connected(net, %d, activation='%s')" % (label_num, out_act))
+    print(o)
+    print(s)
+    net = tflearn.regression(net, learning_rate=0.0001)
+    # return tflearn.DNN(net)
+
+# generate_multi_hidden_layer_nets_by_title("3_hidden_relu_out_sofmax_labelnum_5")
+
+def title2model_conf(title):
+    l = title.split('_')
+    hidden_layer = int(l[0])
+    shape = [None, 9]
+    dropout = 0.2
+    hidden_activation = l[2]
+    out_activation = l[-1]
+    label_num = 31
+    larning_rate = 0.0002
+    node_num = 16
+    optimizer = 'adma'
+    loss = 'categorical_crossentropy'
+    return {
+        "title": title,
+        "dropout": dropout,
+        "shape": shape,
+        "hidden_act": hidden_activation,
+        "hidden_layer_num": hidden_layer,
+        "out_act": out_activation,
+        "label_num": label_num,
+        "larning_rate": larning_rate,
+        "optimizer": optimizer,
+        "node_num": node_num,
+        "loss": loss,
+    }
+
+print(list(map(title2model_conf, ["3_hidden_relu_out_sofmax"])))
+
+conf = title2model_conf("3_hidden_relu_out_sofmax")
+print("%f" % 0.34)
+
+
+def gen_nets_by_config(config):
+    import tflearn
+    # read cofiguration
+    dropout = config['dropout']
+    hidden_act = config['hidden_act']
+    hidden_layer_num = config['hidden_layer_num']
+    out_act = config['out_act']
+    label_num = config['label_num']
+    larning_rate = config['larning_rate']
+    optimizer = config['optimizer']
+    node_num = config['node_num']
+    loss = config['loss']
+    shape = config['shape']
+    
+    # generate network
+    net  = tflearn.input_data(shape=shape)
+
+    # hidden layer
+    for i in range(hidden_layer_num):
+        node_num = node_num << 1 if i <= hidden_layer_num // 2 else node_num >> 1
+        # debug
+        print("net = tflearn.fully_connected(net, %d, activation='%s')" % (node_num, hidden_act))
+        print("net = tflearn.dropout(net, %f)" % (dropout))
+        # execute
+        exec("net = tflearn.fully_connected(net, %d, activation='%s')" % (node_num, hidden_act))
+        exec("net = tflearn.dropout(net, %f)" % (dropout))
+
+    net = tflearn.fully_connected(net, label_num, activation=out_act)
+    net = tflearn.regression(net, learning_rate=larning_rate, loss=loss, optimizer=optimizer)
+    return tflearn.DNN(net)
+
+def title2model_conf(title):
+    l = title.split('_')
+    hidden_layer = int(l[0])
+    shape = [None, 9]
+    dropout = 0.2
+    hidden_activation = l[2]
+    out_activation = l[-1]
+    label_num = 31
+    larning_rate = 0.0002
+    node_num = 16
+    optimizer = 'adam'
+    loss = 'categorical_crossentropy'
+
+    return {
+        "title": title,
+        "dropout": dropout,
+        "shape": shape,
+        "hidden_act": hidden_activation,
+        "hidden_layer_num": hidden_layer,
+        "out_act": out_activation,
+        "label_num": label_num,
+        "larning_rate": larning_rate,
+        "optimizer": optimizer,
+        "node_num": node_num,
+        "loss": loss,
+    }
+
+# conf = title2model_conf("3_hidden_relu_out_softmax")
+# model = gen_nets_by_config(conf)
+
+import time
+s = time.strftime('%m-%d_%H:%M:%S', time.localtime())
+print(s)
+
+l = dir()
+print(l)
+
+import tflearn
+net = tflearn.input_data(shape=[None, 1])
+net = tflearn.fully_connected(net, 32, activation="relu")
+net = tflearn.fully_connected(net, 64, activation="relu")
+net = tflearn.fully_connected(net, 128, activation="relu")
+net = tflearn.fully_connected(net, 64, activation="relu")
+net = tflearn.fully_connected(net, 32, activation="relu")
+net = tflearn.fully_connected(net, 2, activation="softmax")
+net = tflearn.regression(net, learning_rate=0.0009)
+model = tflearn.DNN(net)
+
+train_x = [[1],[2]]
+train_y = [[1,0],[0,1]]
+
+model.fit(train_x, train_y, n_epoch=1000, batch_size=128, show_metric=True)
+
+
+# model.load("./database_process/802.11_script/model")
+model.save("./database_process/802.11_script/model")
+
+input(">")
+res = model.predict_label([[1],[2],[1]])
+print("res:", res)
+for i in res:
+    print(list(i))
+input("<")
+
+def get_timestamp():
+    import time
+    return time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime())
+
+
+def save_models(*, titles=[], models=[]):
+    from os import path, makedirs
+    print("saving %d models..." % len(models))
+    timestamp = get_timestamp()
+    root = path.join("./models/", get_timestamp())  # root dir
+    
+    if not isinstance(titles, list):
+        titles = [titles]
+    if not isinstance(models, list):
+        models = [models]
+    
+    for title, model in zip(titles, models):
+        relative_path = path.join(root, title)
+        makedirs(relative_path) # create dir
+        model.save(path.join(relative_path, title)) # save model
+    
+    print("saving %d models finished!" % len(models))
+    return root
+
+print(save_models(titles=["test","hehe"], models=[model, model]))
+
+# net = tflearn.fully_connected(net, 32, activation="relu")
+# net = tflearn.fully_connected(net, 64, activation="relu")
+# net = tflearn.fully_connected(net, 128, activation="relu")
+# net = tflearn.fully_connected(net, 64, activation="relu")
+# net = tflearn.fully_connected(net, 32, activation="relu")
+# net = tflearn.fully_connected(net, 31, activation="softmax")
+# net = tflearn.regression(net, learning_rate=0.0001)
+
+# return tflearn.DNN(net)
