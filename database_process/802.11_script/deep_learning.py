@@ -96,7 +96,6 @@ def build_neural_network_model(title, label_num, timestamp):
     # net = tflearn.fully_connected(net, 32, activation="relu")
     # net = tflearn.fully_connected(net, 64, activation="relu")
     # net = tflearn.fully_connected(net, 128, activation="relu")
-    # net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
     # net = tflearn.fully_connected(net, 64, activation="relu")
     # net = tflearn.fully_connected(net, 32, activation="relu")
     # net = tflearn.fully_connected(net, 31, activation="softmax")
@@ -275,7 +274,7 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
 
     # init training params
     # epoch = 6000
-    epoch = 1000
+    epoch = 300
     batch_size = 128
     timestamp = get_timestamp()
 
