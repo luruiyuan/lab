@@ -352,7 +352,7 @@ def main():
     from classification import print_res
     attr_names, label_names, train_fraction, train_x, train_y, \
             validate_x, validate_y, titles, \
-            predict_res, evaluate_res = train_validate(train_fraction=0.8)
+            predict_res, evaluate_res = train_validate(train_fraction=0.9)
     
     print_res(titles, evaluate_res)
 
