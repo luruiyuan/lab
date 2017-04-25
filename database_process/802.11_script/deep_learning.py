@@ -45,7 +45,7 @@ def gen_nets_by_config(config, timestamp):
         # print(dr)
         exec("net = tflearn.fully_connected(net, %d, activation='%s')" % (node_num, hidden_act))
 
-    exec("net = tflearn.dropout(net, %f)" % (dropout)) # avoid overfit
+    # exec("net = tflearn.dropout(net, %f)" % (dropout)) # avoid overfit
 
     net = tflearn.fully_connected(net, label_num, activation=out_act)
     net = tflearn.regression(net, learning_rate=learning_rate, loss=loss, optimizer=optimizer)
@@ -53,7 +53,7 @@ def gen_nets_by_config(config, timestamp):
     # define different log path for each model in order to ensure concurrence
     log_path = path.join('./models/', timestamp, title, 'tflearn_logs/')
     makedirs(log_path)
-    dnn = tflearn.models.dnn.DNN(net, tensorboard_dir=log_path) # best_val_accuracy=0.5 may not be reached
+    dnn = tflearn.DNN(net, tensorboard_dir=log_path) # best_val_accuracy=0.5 may not be reached
     print("generating %s succeeded!" % title)
     return dnn
 
@@ -65,7 +65,7 @@ def title2model_conf(title):
     hidden_activation = l[2]
     out_activation = l[-1]
     label_num = 31
-    learning_rate = 0.001
+    learning_rate = 1
     node_num = 16
     optimizer = 'adam'
     loss = 'categorical_crossentropy'
@@ -87,7 +87,19 @@ def title2model_conf(title):
 def build_neural_network_model(title, label_num, timestamp):
     print("building network: %s..." % title)
     # models = list(map(gen_nets_by_config, list(map(title2model_conf, titles)))) # generate multiple models from title
-    model = gen_nets_by_config(title2model_conf(title), timestamp) # generate model from title
+    
+    
+    # model = gen_nets_by_config(title2model_conf(title), timestamp) # generate model from title
+    net  = tflearn.input_data(shape=[None, 9])
+    net = tflearn.fully_connected(net, 32, activation="relu")
+    net = tflearn.fully_connected(net, 64, activation="relu")
+    net = tflearn.fully_connected(net, 128, activation="relu")
+    net = tflearn.fully_connected(net, 64, activation="relu")
+    net = tflearn.fully_connected(net, 32, activation="relu")
+    net = tflearn.fully_connected(net, 31, activation="softmax")
+    net = tflearn.regression(net, learning_rate=0.001)
+    model = tflearn.DNN(net)
+
     print("building network: %s succeeded!" % title)
     
     return model
@@ -243,7 +255,8 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
     pool = Pool(cpu_count())
 
     # init training params
-    epoch = 6000
+    # epoch = 6000
+    epoch = 1000
     batch_size = 128
     timestamp = get_timestamp()
 
@@ -294,19 +307,20 @@ def train_validate():
     # define structure and titles of models
 
     titles = [
-        "3_hidden_relu_out_softmax",
-        "4_hidden_relu_out_softmax",
+        # "3_hidden_relu_out_softmax",
+        # "4_hidden_relu_out_softmax",
         "5_hidden_relu_out_softmax",
-        "6_hidden_relu_out_softmax",
-        "7_hidden_relu_out_softmax",
-        "8_hidden_relu_out_softmax",
-        "9_hidden_relu_out_softmax",
-        "10_hidden_relu_out_softmax",
-        "11_hidden_relu_out_softmax",
-        "12_hidden_relu_out_softmax",
-        "13_hidden_relu_out_softmax",
-        "14_hidden_relu_out_softmax",
-        "15_hidden_relu_out_softmax",
+        # "6_hidden_relu_out_softmax",
+        # "7_hidden_relu_out_softmax",
+        # "8_hidden_relu_out_softmax",
+        # "9_hidden_relu_out_softmax",
+        # "10_hidden_relu_out_softmax",
+        # "11_hidden_relu_out_softmax",
+        # "12_hidden_relu_out_softmax",
+        # "13_hidden_relu_out_softmax",
+        # "14_hidden_relu_out_softmax",
+        # "15_hidden_relu_out_softmax",
+        # "20_hidden_relu_out_softmax",
     ]
 
     # training and validating
