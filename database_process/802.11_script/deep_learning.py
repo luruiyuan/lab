@@ -274,7 +274,7 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
 
     # init training params
     # epoch = 6000
-    epoch = 300
+    epoch = 100
     batch_size = 128
     timestamp = get_timestamp()
 
