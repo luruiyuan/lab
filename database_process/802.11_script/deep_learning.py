@@ -12,7 +12,7 @@ from os import path, makedirs
 
 import tensorflow as tf
 import tflearn
-tflearn.init_graph(num_cores=8, gpu_memory_fraction=0.6)
+tflearn.init_graph(gpu_memory_fraction=0.8)
 
 import time
 
@@ -65,7 +65,7 @@ def title2model_conf(title):
     hidden_activation = l[2]
     out_activation = l[-1]
     label_num = 31
-    learning_rate = 0.0005
+    learning_rate = 0.001
     node_num = 16
     optimizer = 'adam'
     loss = 'categorical_crossentropy'
@@ -264,7 +264,7 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
     # singal processing
     for title in titles:
         # reset graph, otherwise these code will raise:# feed_dict[net_inputs[i]] = x;IndexError: list index out of range
-        tf.reset_default_graph() 
+        tf.reset_default_graph()
         train_validate_worker(q,train_x, train_y, validate_x, validate_y, title, evaluate_func, epoch, batch_size, timestamp)
 
     whole_end = time.time()
