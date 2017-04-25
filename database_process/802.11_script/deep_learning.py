@@ -310,10 +310,10 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
     
     return titles, predict_res, evaluates
 
-def train_validate():
+def train_validate(*,train_fraction=0.6):
     # get data
     attr_names, label_names, train_fraction, \
-        train_x, train_y, validate_x, validate_y = get_data(exclude_attr_columns=["Time", "Protocol", "Source address", "Destination", "TSF timestamp", "Qos Control Field"])
+        train_x, train_y, validate_x, validate_y = get_data(exclude_attr_columns=["Time", "Protocol", "Source address", "Destination", "TSF timestamp", "Qos Control Field"],train_fraction=train_fraction)
 
     # transform label data into required type
     look_up_table = assign_id_for_label(train_y) # create look up table for each label
@@ -352,7 +352,7 @@ def main():
     from classification import print_res
     attr_names, label_names, train_fraction, train_x, train_y, \
             validate_x, validate_y, titles, \
-            predict_res, evaluate_res = train_validate()
+            predict_res, evaluate_res = train_validate(train_fraction=0.8)
     
     print_res(titles, evaluate_res)
 
