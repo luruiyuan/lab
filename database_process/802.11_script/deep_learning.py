@@ -53,7 +53,7 @@ def gen_nets_by_config(config, timestamp):
     # define different log path for each model in order to ensure concurrence
     log_path = path.join('./models/', timestamp, title, 'tflearn_logs/')
     makedirs(log_path)
-    dnn = tflearn.models.dnn.DNN(net, tensorboard_dir=log_path, best_val_accuracy=0.5)
+    dnn = tflearn.models.dnn.DNN(net, tensorboard_dir=log_path) # best_val_accuracy=0.5 may not be reached
     print("generating %s succeeded!" % title)
     return dnn
 
