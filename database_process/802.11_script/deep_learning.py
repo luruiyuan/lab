@@ -94,10 +94,11 @@ def build_neural_network_model(title, label_num, timestamp):
     net = tflearn.fully_connected(net, 32, activation="relu")
     net = tflearn.fully_connected(net, 64, activation="relu")
     net = tflearn.fully_connected(net, 128, activation="relu")
+    net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
     net = tflearn.fully_connected(net, 64, activation="relu")
     net = tflearn.fully_connected(net, 32, activation="relu")
     net = tflearn.fully_connected(net, 31, activation="softmax")
-    net = tflearn.regression(net, learning_rate=0.001)
+    net = tflearn.regression(net, learning_rate=0.0001) # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
     model = tflearn.DNN(net)
 
     print("building network: %s succeeded!" % title)
@@ -309,8 +310,8 @@ def train_validate():
     titles = [
         # "3_hidden_relu_out_softmax",
         # "4_hidden_relu_out_softmax",
-        "5_hidden_relu_out_softmax",
-        # "6_hidden_relu_out_softmax",
+        # "5_hidden_relu_out_softmax",
+        "6_hidden_relu_out_softmax",
         # "7_hidden_relu_out_softmax",
         # "8_hidden_relu_out_softmax",
         # "9_hidden_relu_out_softmax",
