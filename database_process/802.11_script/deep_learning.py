@@ -98,7 +98,9 @@ def build_neural_network_model(title, label_num, timestamp):
     net = tflearn.fully_connected(net, 64, activation="relu")
     net = tflearn.fully_connected(net, 32, activation="relu")
     net = tflearn.fully_connected(net, 31, activation="softmax")
-    net = tflearn.regression(net, learning_rate=0.0001) # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
+    # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
+    # 而 0.001 则只能在 0.76-0.79 徘徊
+    net = tflearn.regression(net, learning_rate=0.0001) 
     model = tflearn.DNN(net)
 
     print("building network: %s succeeded!" % title)
