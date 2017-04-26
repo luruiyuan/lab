@@ -365,3 +365,68 @@ def save_models(*, titles=[], models=[]):
 
 
 print(os.path.join("/usr/hehe", "title/"))
+
+def get_dl_accuracy(*, predict_labels, correct_labels): 
+    print("start deep learning accuracy calculation...")
+    accuracy = .0
+
+    for pre, corr in zip(predict_labels, correct_labels):
+        pre_list = list(pre)
+        accuracy += 1 if pre_list.index(max(pre_list)) == corr.index(1) else 0 # predict labels has ndarrays
+    accuracy /= len(predict_labels)
+
+    print("accuracy calculation finished!\n  accuracy:", accuracy)
+    return accuracy
+
+
+def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, title, model, evaluate_func, epoch, batch_size, timestamp):
+    
+    
+    res = {"title": title}
+    # train model: model cannot be transfered to parent process
+    print(title,"training...")
+    model.fit(train_x, train_y, n_epoch=epoch, batch_size=batch_size, show_metric=True)
+    print(title, "training finished!")
+
+    #validate
+    print(title,"predicting...")
+    predict_labels = model.predict(validate_x)
+
+    pre = model.predict(train_x)
+    evaluate_func(predict_labels=pre, correct_labels=train_y)
+
+    print(title,"predicting finished!")
+    res["result"] = predict_labels
+
+    # evaluate
+    print(title,"evaluating...")
+    res["evaluate"] = evaluate_func(predict_labels=predict_labels, correct_labels=validate_y)
+
+    # res["evaluate"] = evaluate_func(predict_labels=predict_labels, correct_labels=train_y)
+    print(title,"evaluating finished!")
+    
+    # put res into message queue
+    msg_que.put(res)
+
+s = """
+print("shit");
+print("fuck);
+"""
+
+s = "print(\"shit\");"
+s1 = "print('fuck')"
+
+
+s =  """
+net  = tflearn.input_data(shape=[None, 9])
+net = tflearn.fully_connected(net, 32, activation="relu")
+net = tflearn.fully_connected(net, 64, activation="relu")
+net = tflearn.fully_connected(net, 128, activation="relu")
+net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+net = tflearn.fully_connected(net, 64, activation="relu")
+net = tflearn.fully_connected(net, 32, activation="relu")
+net = tflearn.fully_connected(net, 31, activation="softmax")"""
+print(s.split('\n'))
+
+for t in s.split('\n'):
+    exec(t)
