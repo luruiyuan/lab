@@ -231,7 +231,7 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, cod
     pool = Pool(cpu_count())
 
     # init training params
-    epoch = 100
+    epoch = 500
     batch_size = 256
     timestamp = get_timestamp()
 
