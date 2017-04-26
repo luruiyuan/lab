@@ -16,7 +16,7 @@ tflearn.init_graph(gpu_memory_fraction=0.8)
 
 import time
 
-def gen_nets_by_config(config, timestamp):
+def gen_nets_by_config(config, timestamp, net_code):
     # read cofiguration
     title = config['title']
     dropout = config['dropout']
@@ -32,30 +32,18 @@ def gen_nets_by_config(config, timestamp):
     
     print("generating %s..." % title)
 
-    # generate network
-    net  = tflearn.input_data(shape=shape)
-
-    # hidden layer
-    for i in range(hidden_layer_num):
-        node_num = node_num << 1 if i <= hidden_layer_num // 2 else node_num >> 1
-        # debug
-        # fc = "net = tflearn.fully_connected(net, %d, activation='%s')" % (node_num, hidden_act)
-        # dr = "net = tflearn.dropout(net, %f)" % (dropout)
-        # print(fc)
-        # print(dr)
-        exec("net = tflearn.fully_connected(net, %d, activation='%s')" % (node_num, hidden_act))
-
-    # exec("net = tflearn.dropout(net, %f)" % (dropout)) # avoid overfit
-
-    net = tflearn.fully_connected(net, label_num, activation=out_act)
-    net = tflearn.regression(net, learning_rate=learning_rate, loss=loss, optimizer=optimizer)
-
     # define different log path for each model in order to ensure concurrence
     log_path = path.join('./models/', timestamp, title, 'tflearn_logs/')
     makedirs(log_path)
-    dnn = tflearn.DNN(net, tensorboard_dir=log_path) # best_val_accuracy=0.5 may not be reached
+    # generate network
+    lines = [s.strip() for s in net_code.split('\n')]
+    for i in range(len(lines) - 1):
+        print("line:", lines[i])
+        exec(lines[i])
+
     print("generating %s succeeded!" % title)
-    return dnn
+    return eval(lines[-1])
+    # return model # model must be defined in the code lines in the net_code list
 
 def title2model_conf(title):
     l = title.split('_')
@@ -84,40 +72,10 @@ def title2model_conf(title):
         "loss": loss,
     }
 
-def build_neural_network_model(title, label_num, timestamp):
+def build_neural_network_model(title, net_code, timestamp):
     print("building network: %s..." % title)
-    # model = gen_nets_by_config(title2model_conf(title), timestamp) # generate multiple models from title
     
-    
-    # model = gen_nets_by_config(title2model_conf(title), timestamp) # generate model from title
-
-    # 原有 model
-    net  = tflearn.input_data(shape=[None, 9])
-    net = tflearn.fully_connected(net, 32, activation="relu")
-    net = tflearn.fully_connected(net, 64, activation="relu")
-    net = tflearn.fully_connected(net, 128, activation="relu")
-    net = tflearn.fully_connected(net, 64, activation="relu")
-    net = tflearn.fully_connected(net, 32, activation="relu")
-    net = tflearn.fully_connected(net, 31, activation="softmax")
-    # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
-    # 而 0.001 则只能在 0.76-0.79 徘徊
-    net = tflearn.regression(net, learning_rate=0.0001) 
-    model = tflearn.DNN(net)
-
-    # # 加了一层的model
- """   
- net  = tflearn.input_data(shape=[None, 9])
-net = tflearn.fully_connected(net, 32, activation="relu")
-net = tflearn.fully_connected(net, 64, activation="relu")
-net = tflearn.fully_connected(net, 128, activation="relu")
-net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
-net = tflearn.fully_connected(net, 64, activation="relu")
-net = tflearn.fully_connected(net, 32, activation="relu")
-net = tflearn.fully_connected(net, 31, activation="softmax")"""
-    # # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
-    # # 而 0.001 则只能在 0.76-0.79 徘徊
-    # net = tflearn.regression(net, learning_rate=0.0001) 
-    # model = tflearn.DNN(net)
+    model = gen_nets_by_config(title2model_conf(title), timestamp, net_code) # generate model from title
 
     print("building network: %s succeeded!" % title)
     
@@ -175,7 +133,7 @@ def transform_label_to_vector(data, look_up_table):
 def get_timestamp():
     return time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime())
     
-def save_models(*, timestamp, titles=[], models=[]):
+def save_models(*, timestamp, titles=[], models=[], codes=[]):
     """
     Saving models and return the root dir path of models
     """
@@ -193,11 +151,14 @@ def save_models(*, timestamp, titles=[], models=[]):
     root = path.join("./models/", timestamp)  # root dir
     
     
-    for title, model in zip(titles, models):
+    for title, model, code in zip(titles, models, codes):
         relative_path = path.join(root, title)
         if not path.exists(relative_path):
             makedirs(relative_path) # create dir
-        model.save(path.join(relative_path, title)) # save model
+        ch_path = path.join(relative_path, title) # child path
+        model.save(ch_path) # save model
+        with open(ch_path+"_code.txt", 'w') as f:
+            f.write(code)
     
     if len(titles) == 1:
         print("saving model: %s finished" % titles[0])
@@ -208,7 +169,6 @@ def save_models(*, timestamp, titles=[], models=[]):
 
 def load_models(titles, models):
     pass
-    # """
     # not finished yet.
 
 def get_dl_accuracy(*, predict_labels, correct_labels): 
@@ -224,10 +184,10 @@ def get_dl_accuracy(*, predict_labels, correct_labels):
     return accuracy
 
 
-def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, title, evaluate_func, epoch, batch_size, timestamp):
+def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, title, code, evaluate_func, epoch, batch_size, timestamp):
     
     # train model: model cannot be transfered to parent process    
-    model = build_neural_network_model(title, 31, timestamp)
+    model = build_neural_network_model(title, code, timestamp)
     
     res = {"title": title}
     print(title,"training...")
@@ -242,13 +202,12 @@ def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, tit
     res["result"] = predict_labels
 
     # saving model
-    save_models(timestamp=timestamp, titles=[title], models=model)
+    save_models(timestamp=timestamp, titles=[title], models=[model], codes=[code])
 
     # evaluate
     print(title,"evaluating...")
     res["evaluate"] = evaluate_func(predict_labels=predict_labels, correct_labels=validate_y)
 
-    # res["evaluate"] = evaluate_func(predict_labels=predict_labels, correct_labels=train_y)
     print(title,"evaluating finished!")
     
     # put res into message queue
@@ -261,7 +220,7 @@ def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, tit
 # won't release screen handle until current training is finished, which causes other processes quit.
 # Thus, tensorflow is not appropriate to train multiple model in the mean time.
 
-def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, evaluate_func):
+def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, codes, evaluate_func):
     from multiprocessing import cpu_count, Pool, Manager
     import time
 
@@ -272,8 +231,7 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
     pool = Pool(cpu_count())
 
     # init training params
-    # epoch = 6000
-    epoch = 10
+    epoch = 100
     batch_size = 256
     timestamp = get_timestamp()
 
@@ -292,11 +250,11 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
     # pool.join()
     
     # singal processing
-    for title in titles:
+    for title, code in zip(titles, codes):
         # reset graph, otherwise these code will raise:# feed_dict[net_inputs[i]] = x;IndexError: list index out of range, 
         # and model generation must after the default process.
         tf.reset_default_graph()
-        train_validate_worker(q,train_x, train_y, validate_x, validate_y, title, evaluate_func, epoch, batch_size, timestamp)
+        train_validate_worker(q,train_x, train_y, validate_x, validate_y, title, code, evaluate_func, epoch, batch_size, timestamp)
 
     whole_end = time.time()
     print("whole time for training, validation and evaluating: %.3f seconds." % (whole_end - whole_start))
@@ -325,25 +283,40 @@ def train_validate(*,train_fraction=0.6):
     # define structure and titles of models
 
     titles = [
-        "3_hidden_relu_out_softmax",
-        "4_hidden_relu_out_softmax",
-        # "5_hidden_relu_out_softmax",
-        # "6_hidden_relu_out_softmax",
-        # "7_hidden_relu_out_softmax",
-        # "8_hidden_relu_out_softmax",
-        # "9_hidden_relu_out_softmax",
-        # "10_hidden_relu_out_softmax",
-        # "11_hidden_relu_out_softmax",
-        # "12_hidden_relu_out_softmax",
-        # "13_hidden_relu_out_softmax",
-        # "14_hidden_relu_out_softmax",
-        # "15_hidden_relu_out_softmax",
-        # "20_hidden_relu_out_softmax",
+        "5_hidden_layer_out_softmax",
+        "6_hidden_layer_out_softmax",
+    ]
+
+    codes = [
+            """
+        net  = tflearn.input_data(shape=[None, 9])
+        net = tflearn.fully_connected(net, 32, activation="relu")
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 128, activation="relu")
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 32, activation="relu")
+        net = tflearn.fully_connected(net, 31, activation="softmax")
+        # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
+        # 而 0.001 则只能在 0.76-0.79 徘徊
+        net = tflearn.regression(net, learning_rate=0.0001) 
+        tflearn.DNN(net, tensorboard_dir=log_path)""",
+
+        """
+        net  = tflearn.input_data(shape=[None, 9])
+        net = tflearn.fully_connected(net, 32, activation="relu")
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 128, activation="relu")
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 32, activation="relu")
+        net = tflearn.fully_connected(net, 31, activation="softmax")
+        net = tflearn.regression(net, learning_rate=0.0001) 
+        tflearn.DNN(net, tensorboard_dir=log_path)""",
     ]
 
     # training and validating
     titles, predict_res, evaluates = train_validate_manager(train_x, train_y, validate_x, validate_y, \
-                                titles, get_dl_accuracy)
+                                titles, codes, get_dl_accuracy)
     
     return attr_names, label_names, train_fraction, train_x, train_y, \
             validate_x, validate_y, titles, predict_res, evaluates

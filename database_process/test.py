@@ -417,8 +417,7 @@ s = "print(\"shit\");"
 s1 = "print('fuck')"
 
 
-s =  """
-net  = tflearn.input_data(shape=[None, 9])
+s =  """#net  = tflearn.input_data(shape=[None, 9])
 net = tflearn.fully_connected(net, 32, activation="relu")
 net = tflearn.fully_connected(net, 64, activation="relu")
 net = tflearn.fully_connected(net, 128, activation="relu")
@@ -428,5 +427,4 @@ net = tflearn.fully_connected(net, 32, activation="relu")
 net = tflearn.fully_connected(net, 31, activation="softmax")"""
 print(s.split('\n'))
 
-for t in s.split('\n'):
-    exec(t)
+print(" 呵呵   \n".lstrip())
