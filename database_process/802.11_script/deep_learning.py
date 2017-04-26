@@ -283,21 +283,46 @@ def train_validate(*,train_fraction=0.6):
     # define structure and titles of models
 
     titles = [
-        "5_hidden_layer_out_softmax",
-        "12_hidden_layer_out_softmax",
+        "10_hidden_layer_out_softmax",
+        "15_hidden_layer_out_softmax",
+        "20_hidden_layer_out_softmax",
     ]
 
     codes = [
-            """
+        """
         net  = tflearn.input_data(shape=[None, 9])
         net = tflearn.fully_connected(net, 32, activation="relu")
         net = tflearn.fully_connected(net, 64, activation="relu")
-        net = tflearn.fully_connected(net, 128, activation="relu")
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 64, activation="relu")
         net = tflearn.fully_connected(net, 64, activation="relu")
         net = tflearn.fully_connected(net, 32, activation="relu")
         net = tflearn.fully_connected(net, 31, activation="softmax")
-        # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
-        # 而 0.001 则只能在 0.76-0.79 徘徊
+        net = tflearn.regression(net, learning_rate=0.0001)
+        tflearn.DNN(net, tensorboard_dir=log_path)""",
+
+        """
+        net  = tflearn.input_data(shape=[None, 9])
+        net = tflearn.fully_connected(net, 32, activation="relu")
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 128, activation="relu")
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 32, activation="relu")
+        net = tflearn.fully_connected(net, 31, activation="softmax")
         net = tflearn.regression(net, learning_rate=0.0001) 
         tflearn.DNN(net, tensorboard_dir=log_path)""",
 
@@ -305,11 +330,20 @@ def train_validate(*,train_fraction=0.6):
         net  = tflearn.input_data(shape=[None, 9])
         net = tflearn.fully_connected(net, 32, activation="relu")
         net = tflearn.fully_connected(net, 64, activation="relu")
+        net = tflearn.fully_connected(net, 64, activation="relu")
         net = tflearn.fully_connected(net, 128, activation="relu")
         net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
         net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 1024, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 1024, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
         net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
         net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
         net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
         net = tflearn.fully_connected(net, 64, activation="relu")
         net = tflearn.fully_connected(net, 64, activation="relu")
