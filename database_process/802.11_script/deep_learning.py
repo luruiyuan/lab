@@ -86,30 +86,16 @@ def title2model_conf(title):
 
 def build_neural_network_model(title, label_num, timestamp):
     print("building network: %s..." % title)
-    # models = list(map(gen_nets_by_config, list(map(title2model_conf, titles)))) # generate multiple models from title
+    # model = gen_nets_by_config(title2model_conf(title), timestamp) # generate multiple models from title
     
     
     # model = gen_nets_by_config(title2model_conf(title), timestamp) # generate model from title
 
     # 原有 model
-    # net  = tflearn.input_data(shape=[None, 9])
-    # net = tflearn.fully_connected(net, 32, activation="relu")
-    # net = tflearn.fully_connected(net, 64, activation="relu")
-    # net = tflearn.fully_connected(net, 128, activation="relu")
-    # net = tflearn.fully_connected(net, 64, activation="relu")
-    # net = tflearn.fully_connected(net, 32, activation="relu")
-    # net = tflearn.fully_connected(net, 31, activation="softmax")
-    # # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
-    # # 而 0.001 则只能在 0.76-0.79 徘徊
-    # net = tflearn.regression(net, learning_rate=0.0001) 
-    # model = tflearn.DNN(net)
-
-    # 加了一层的model
     net  = tflearn.input_data(shape=[None, 9])
     net = tflearn.fully_connected(net, 32, activation="relu")
     net = tflearn.fully_connected(net, 64, activation="relu")
     net = tflearn.fully_connected(net, 128, activation="relu")
-    net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
     net = tflearn.fully_connected(net, 64, activation="relu")
     net = tflearn.fully_connected(net, 32, activation="relu")
     net = tflearn.fully_connected(net, 31, activation="softmax")
@@ -117,6 +103,21 @@ def build_neural_network_model(title, label_num, timestamp):
     # 而 0.001 则只能在 0.76-0.79 徘徊
     net = tflearn.regression(net, learning_rate=0.0001) 
     model = tflearn.DNN(net)
+
+    # # 加了一层的model
+ """   
+ net  = tflearn.input_data(shape=[None, 9])
+net = tflearn.fully_connected(net, 32, activation="relu")
+net = tflearn.fully_connected(net, 64, activation="relu")
+net = tflearn.fully_connected(net, 128, activation="relu")
+net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+net = tflearn.fully_connected(net, 64, activation="relu")
+net = tflearn.fully_connected(net, 32, activation="relu")
+net = tflearn.fully_connected(net, 31, activation="softmax")"""
+    # # 0.0001 比 0.001 收敛慢，但是 epoch超过300时，0.0001 的 loss更加稳定, accuracy更高, 大约 0.79-0.80
+    # # 而 0.001 则只能在 0.76-0.79 徘徊
+    # net = tflearn.regression(net, learning_rate=0.0001) 
+    # model = tflearn.DNN(net)
 
     print("building network: %s succeeded!" % title)
     
@@ -168,10 +169,8 @@ def transform_label_to_vector(data, look_up_table):
     if not isinstance(data, list):
         data = [data]
     labels_vecs = [[1 if look_up_table[d] == k else 0 for k in range(len(look_up_table))] for d in data] 
-    print("label transfering finished!")    
+    print("label transfering finished!")
     return labels_vecs
-
-
 
 def get_timestamp():
     return time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime())
@@ -211,45 +210,45 @@ def load_models(titles, models):
     pass
     # """
     # not finished yet.
-    # """
-    # pass
-    # print("loading model from file...")
-    # model = build_neural_network_model(in_shape=[None, 9])
-    # model.load("model")
-    # print("loading model finished!")
 
 def get_dl_accuracy(*, predict_labels, correct_labels): 
     print("start deep learning accuracy calculation...")
     accuracy = .0
+
     for pre, corr in zip(predict_labels, correct_labels):
-        accuracy += 1 if list(pre).index(1) == corr.index(1) else 0 # predict labels has ndarrays
+        pre_list = list(pre)
+        accuracy += 1 if pre_list.index(max(pre_list)) == corr.index(1) else 0 # predict labels has ndarrays
     accuracy /= len(predict_labels)
+
     print("accuracy calculation finished!\n  accuracy:", accuracy)
     return accuracy
 
 
 def train_validate_worker(msg_que, train_x, train_y, validate_x, validate_y, title, evaluate_func, epoch, batch_size, timestamp):
     
+    # train model: model cannot be transfered to parent process    
     model = build_neural_network_model(title, 31, timestamp)
     
     res = {"title": title}
-    # train model: model cannot be transfered to parent process
     print(title,"training...")
     model.fit(train_x, train_y, n_epoch=epoch, batch_size=batch_size, show_metric=True)
     print(title, "training finished!")
 
-    # save model
-    save_models(timestamp=timestamp, titles=[title], models=[model])
-
     #validate
     print(title,"predicting...")
-    predict_labels = model.predict_label(validate_x)
+    predict_labels = model.predict(validate_x)
+
     print(title,"predicting finished!")
     res["result"] = predict_labels
+
+    # saving model
+    save_models(timestamp=timestamp, titles=[title], models=model)
 
     # evaluate
     print(title,"evaluating...")
     res["evaluate"] = evaluate_func(predict_labels=predict_labels, correct_labels=validate_y)
+
+    # res["evaluate"] = evaluate_func(predict_labels=predict_labels, correct_labels=train_y)
     print(title,"evaluating finished!")
     
     # put res into message queue
@@ -274,8 +273,8 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
 
     # init training params
     # epoch = 6000
-    epoch = 100
-    batch_size = 128
+    epoch = 10
+    batch_size = 256
     timestamp = get_timestamp()
 
     whole_start = time.time()
@@ -294,7 +293,8 @@ def train_validate_manager(train_x, train_y, validate_x, validate_y, titles, eva
     
     # singal processing
     for title in titles:
-        # reset graph, otherwise these code will raise:# feed_dict[net_inputs[i]] = x;IndexError: list index out of range
+        # reset graph, otherwise these code will raise:# feed_dict[net_inputs[i]] = x;IndexError: list index out of range, 
+        # and model generation must after the default process.
         tf.reset_default_graph()
         train_validate_worker(q,train_x, train_y, validate_x, validate_y, title, evaluate_func, epoch, batch_size, timestamp)
 
@@ -325,10 +325,10 @@ def train_validate(*,train_fraction=0.6):
     # define structure and titles of models
 
     titles = [
-        # "3_hidden_relu_out_softmax",
-        # "4_hidden_relu_out_softmax",
+        "3_hidden_relu_out_softmax",
+        "4_hidden_relu_out_softmax",
         # "5_hidden_relu_out_softmax",
-        "6_hidden_relu_out_softmax",
+        # "6_hidden_relu_out_softmax",
         # "7_hidden_relu_out_softmax",
         # "8_hidden_relu_out_softmax",
         # "9_hidden_relu_out_softmax",
@@ -352,7 +352,7 @@ def main():
     from classification import print_res
     attr_names, label_names, train_fraction, train_x, train_y, \
             validate_x, validate_y, titles, \
-            predict_res, evaluate_res = train_validate(train_fraction=0.9)
+            predict_res, evaluate_res = train_validate(train_fraction=0.5)
     
     print_res(titles, evaluate_res)
 
