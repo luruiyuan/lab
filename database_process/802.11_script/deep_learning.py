@@ -284,7 +284,7 @@ def train_validate(*,train_fraction=0.6):
 
     titles = [
         "5_hidden_layer_out_softmax",
-        "6_hidden_layer_out_softmax",
+        "12_hidden_layer_out_softmax",
     ]
 
     codes = [
@@ -307,6 +307,11 @@ def train_validate(*,train_fraction=0.6):
         net = tflearn.fully_connected(net, 64, activation="relu")
         net = tflearn.fully_connected(net, 128, activation="relu")
         net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 512, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 256, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 128, activation="relu") # add a layer
+        net = tflearn.fully_connected(net, 64, activation="relu")
         net = tflearn.fully_connected(net, 64, activation="relu")
         net = tflearn.fully_connected(net, 32, activation="relu")
         net = tflearn.fully_connected(net, 31, activation="softmax")
